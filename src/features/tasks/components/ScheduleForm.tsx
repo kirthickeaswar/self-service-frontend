@@ -21,6 +21,7 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
             ...value,
             mode: event.target.value as CreateScheduleInput['mode'],
             endTime: event.target.value === 'NON_RECURRING' ? undefined : value.endTime ?? '18:00',
+            interval: event.target.value === 'NON_RECURRING' ? undefined : value.interval ?? 1,
             frequency: event.target.value === 'NON_RECURRING' ? undefined : value.frequency,
             date: event.target.value === 'RECURRING' ? undefined : value.date ?? toIsoDateStart(today),
           })
@@ -42,24 +43,44 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
             helperText="Recurring start time"
           />
           <TextField
-            label="End Time"
-            type="time"
-            value={value.endTime ?? '18:00'}
-            onChange={(event) => onChange({ ...value, endTime: event.target.value })}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ step: 60 }}
-            helperText="Recurring end time"
-          />
-          <TextField
             select
             label="Frequency"
             value={value.frequency ?? 'DAILY'}
-            onChange={(event) => onChange({ ...value, frequency: event.target.value as CreateScheduleInput['frequency'] })}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                frequency: event.target.value as CreateScheduleInput['frequency'],
+                interval: value.interval ?? 1,
+              })
+            }
           >
+            <MenuItem value="MINUTELY">Minutely</MenuItem>
+            <MenuItem value="HOURLY">Hourly</MenuItem>
             <MenuItem value="DAILY">Daily</MenuItem>
             <MenuItem value="WEEKLY">Weekly</MenuItem>
             <MenuItem value="MONTHLY">Monthly</MenuItem>
+            <MenuItem value="YEARLY">Yearly</MenuItem>
           </TextField>
+          <TextField
+            label="Repeat Every"
+            type="number"
+            value={value.interval ?? 1}
+            onChange={(event) => onChange({ ...value, interval: Number(event.target.value) })}
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ min: 1, max: 999, step: 1 }}
+            helperText={`Interval for ${String(value.frequency ?? 'DAILY').toLowerCase()} recurrence`}
+          />
+          {value.frequency === 'MINUTELY' || value.frequency === 'HOURLY' ? (
+            <TextField
+              label="Window End Time"
+              type="time"
+              value={value.endTime ?? '18:00'}
+              onChange={(event) => onChange({ ...value, endTime: event.target.value })}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ step: 60 }}
+              helperText="Optional window end time for intraday recurrence"
+            />
+          ) : null}
         </>
       ) : (
         <>

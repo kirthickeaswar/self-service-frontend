@@ -169,6 +169,7 @@ export const apiServer = {
               mode: input.schedule.mode,
               time: input.schedule.time,
               endTime: input.schedule.endTime,
+              interval: input.schedule.interval,
               frequency: input.schedule.frequency,
               date: input.schedule.date,
               nextRunAt: calculateNextRunAt(input.schedule),
@@ -283,11 +284,16 @@ export const apiServer = {
       if (input.mode === 'RECURRING' && !input.frequency) {
         throw new Error('Recurring schedules require frequency');
       }
-      if (input.mode === 'RECURRING' && !input.endTime) {
-        throw new Error('Recurring schedules require end time');
-      }
-      if (input.mode === 'RECURRING' && input.endTime && isTimeRangeInvalid(input.time, input.endTime)) {
+      if (
+        input.mode === 'RECURRING' &&
+        input.endTime &&
+        (input.frequency === 'MINUTELY' || input.frequency === 'HOURLY') &&
+        isTimeRangeInvalid(input.time, input.endTime)
+      ) {
         throw new Error('Recurring end time must be later than start time');
+      }
+      if (input.mode === 'RECURRING' && !(input.interval && input.interval >= 1)) {
+        throw new Error('Recurring schedules require a valid interval');
       }
 
       if (input.mode === 'NON_RECURRING' && !input.date) {
@@ -300,6 +306,7 @@ export const apiServer = {
         mode: input.mode,
         time: input.time,
         endTime: input.endTime,
+        interval: input.interval,
         frequency: input.frequency,
         date: input.date,
         nextRunAt: calculateNextRunAt(input),
@@ -331,11 +338,16 @@ export const apiServer = {
       if (input.mode === 'RECURRING' && !input.frequency) {
         throw new Error('Recurring schedules require frequency');
       }
-      if (input.mode === 'RECURRING' && !input.endTime) {
-        throw new Error('Recurring schedules require end time');
-      }
-      if (input.mode === 'RECURRING' && input.endTime && isTimeRangeInvalid(input.time, input.endTime)) {
+      if (
+        input.mode === 'RECURRING' &&
+        input.endTime &&
+        (input.frequency === 'MINUTELY' || input.frequency === 'HOURLY') &&
+        isTimeRangeInvalid(input.time, input.endTime)
+      ) {
         throw new Error('Recurring end time must be later than start time');
+      }
+      if (input.mode === 'RECURRING' && !(input.interval && input.interval >= 1)) {
+        throw new Error('Recurring schedules require a valid interval');
       }
 
       if (input.mode === 'NON_RECURRING' && !input.date) {
@@ -345,12 +357,14 @@ export const apiServer = {
       schedule.mode = input.mode;
       schedule.time = input.time;
       schedule.endTime = input.mode === 'RECURRING' ? input.endTime : undefined;
+      schedule.interval = input.mode === 'RECURRING' ? input.interval : undefined;
       schedule.frequency = input.mode === 'RECURRING' ? input.frequency : undefined;
       schedule.date = input.mode === 'NON_RECURRING' ? input.date : undefined;
       schedule.nextRunAt = calculateNextRunAt({
         mode: input.mode,
         time: input.time,
         endTime: input.endTime,
+        interval: input.interval,
         frequency: input.frequency,
         date: input.date,
       });

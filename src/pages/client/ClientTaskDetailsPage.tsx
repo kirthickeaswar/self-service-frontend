@@ -37,13 +37,14 @@ import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { ScheduleForm } from '@/features/tasks/components/ScheduleForm';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { ensureOwnerInAccess, parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
-import { formatTimeDisplay } from '@/features/tasks/utils/schedule';
+import { formatRecurringRule, formatTimeDisplay } from '@/features/tasks/utils/schedule';
 import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
 
 const defaultSchedule: CreateScheduleInput = {
   mode: 'RECURRING',
   time: '10:00',
   endTime: '18:00',
+  interval: 1,
   frequency: 'DAILY',
 };
 
@@ -165,6 +166,7 @@ export const ClientTaskDetailsPage = () => {
       mode: schedule.mode,
       time: schedule.time,
       endTime: schedule.endTime,
+      interval: schedule.interval,
       frequency: schedule.frequency,
       date: schedule.date,
     });
@@ -298,11 +300,15 @@ export const ClientTaskDetailsPage = () => {
                   <TableRow key={schedule.id} hover>
                     <TableCell>{schedule.mode}</TableCell>
                     <TableCell>
-                      {schedule.mode === 'RECURRING'
+                      {schedule.mode === 'RECURRING' && (schedule.frequency === 'MINUTELY' || schedule.frequency === 'HOURLY') && schedule.endTime
                         ? `${formatTimeDisplay(schedule.time)} - ${formatTimeDisplay(schedule.endTime ?? schedule.time)}`
                         : formatTimeDisplay(schedule.time)}
                     </TableCell>
-                    <TableCell>{schedule.mode === 'RECURRING' ? schedule.frequency : new Date(schedule.date ?? '').toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {schedule.mode === 'RECURRING'
+                        ? formatRecurringRule(schedule.frequency, schedule.interval, schedule.endTime)
+                        : new Date(schedule.date ?? '').toLocaleDateString()}
+                    </TableCell>
                     <TableCell>{schedule.mode === 'NON_RECURRING' ? 'N/A' : new Date(schedule.nextRunAt).toLocaleString()}</TableCell>
                     <TableCell>
                       <StatusChip status={schedule.status} />

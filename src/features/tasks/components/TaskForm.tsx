@@ -15,6 +15,7 @@ const defaultSchedule: CreateScheduleInput = {
   mode: 'RECURRING',
   time: '09:00',
   endTime: '18:00',
+  interval: 1,
   frequency: 'DAILY',
 };
 

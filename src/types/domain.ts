@@ -2,7 +2,7 @@ export type TaskType = string;
 export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED';
 
 export type ScheduleMode = 'RECURRING' | 'NON_RECURRING';
-export type RecurringFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type RecurringFrequency = 'MINUTELY' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
 export type ScheduleStatus = 'SCHEDULED' | 'PAUSED' | 'COMPLETED' | 'FAILED';
 
@@ -15,6 +15,7 @@ export interface Schedule {
   mode: ScheduleMode;
   time: string;
   endTime?: string;
+  interval?: number;
   frequency?: RecurringFrequency;
   date?: string;
   nextRunAt: string;
@@ -67,6 +68,7 @@ export interface CreateScheduleInput {
   mode: ScheduleMode;
   time: string;
   endTime?: string;
+  interval?: number;
   frequency?: RecurringFrequency;
   date?: string;
 }
@@ -91,6 +93,7 @@ export interface UpdateScheduleInput {
   mode: ScheduleMode;
   time: string;
   endTime?: string;
+  interval?: number;
   frequency?: RecurringFrequency;
   date?: string;
 }

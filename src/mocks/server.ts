@@ -106,6 +106,39 @@ const withMock = <T>(resolver: () => T, failureRate = 0): Promise<T> => {
 };
 
 export const apiServer = {
+  getTaskTypes() {
+    return withMock(() => [...mockDb.taskTypes], readFailureRate);
+  },
+
+  addTaskType(type: string) {
+    return withMock(() => {
+      const normalized = type.trim().toUpperCase();
+      if (!normalized) {
+        throw new Error('Task type is required');
+      }
+      if (mockDb.taskTypes.includes(normalized)) {
+        throw new Error('Task type already exists');
+      }
+      mockDb.taskTypes.push(normalized);
+      return [...mockDb.taskTypes];
+    }, writeFailureRate);
+  },
+
+  deleteTaskType(type: string) {
+    return withMock(() => {
+      const normalized = type.trim().toUpperCase();
+      if (!mockDb.taskTypes.includes(normalized)) {
+        throw new Error('Task type not found');
+      }
+      const inUse = mockDb.tasks.some((task) => task.type === normalized);
+      if (inUse) {
+        throw new Error('Cannot delete a type currently used by existing tasks');
+      }
+      mockDb.taskTypes = mockDb.taskTypes.filter((item) => item !== normalized);
+      return [...mockDb.taskTypes];
+    }, writeFailureRate);
+  },
+
   getTasks(filters?: TaskFilters) {
     return withMock(() => byTaskFilters(mockDb.tasks, filters), readFailureRate);
   },
@@ -124,6 +157,9 @@ export const apiServer = {
     return withMock(() => {
       const now = new Date().toISOString();
       const taskId = id();
+      if (!mockDb.taskTypes.includes(input.type)) {
+        throw new Error('Selected task type is not available');
+      }
 
       const schedules: Schedule[] = input.schedule
         ? [
@@ -175,6 +211,9 @@ export const apiServer = {
       const task = mockDb.tasks.find((item) => item.id === taskId);
       if (!task) {
         throw new Error('Task not found');
+      }
+      if (!mockDb.taskTypes.includes(input.type)) {
+        throw new Error('Selected task type is not available');
       }
 
       task.name = input.name;

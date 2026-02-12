@@ -35,6 +35,7 @@ import { StatusChip } from '@/components/common/StatusChip';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { ScheduleForm } from '@/features/tasks/components/ScheduleForm';
+import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { ensureOwnerInAccess, parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
 import { formatTimeDisplay } from '@/features/tasks/utils/schedule';
 import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
@@ -52,6 +53,7 @@ export const ClientTaskDetailsPage = () => {
   const { taskId } = useParams();
   const taskIdNumber = Number(taskId);
   const { showToast } = useSnackbar();
+  const { taskTypes } = useTaskTypes();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -377,10 +379,11 @@ export const ClientTaskDetailsPage = () => {
               helperText="Add distribution list members. Owner cannot be removed."
             />
             <TextField select label="Task Type" value={taskType} onChange={(event) => setTaskType(event.target.value as TaskType)}>
-              <MenuItem value="T1">T1</MenuItem>
-              <MenuItem value="T2">T2</MenuItem>
-              <MenuItem value="T3">T3</MenuItem>
-              <MenuItem value="T4">T4</MenuItem>
+              {[...new Set([...taskTypes, taskType])].map((typeOption) => (
+                <MenuItem key={typeOption} value={typeOption}>
+                  {typeOption}
+                </MenuItem>
+              ))}
             </TextField>
           </Stack>
         </DialogContent>

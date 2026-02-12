@@ -5,6 +5,7 @@ import AddTaskIcon from '@mui/icons-material/AddTask';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import DescriptionIcon from '@mui/icons-material/Description';
+import CategoryIcon from '@mui/icons-material/Category';
 import {
   AppBar,
   Box,
@@ -43,6 +44,7 @@ const adminLinks: MenuLink[] = [
   { label: 'Admin Overview', path: '/admin/overview', icon: <DashboardIcon fontSize="small" /> },
   { label: 'All Tasks', path: '/admin/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/admin/create-task', icon: <AddTaskIcon fontSize="small" /> },
+  { label: 'Task Types', path: '/admin/task-types', icon: <CategoryIcon fontSize="small" /> },
   { label: 'Logs', path: '/admin/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 

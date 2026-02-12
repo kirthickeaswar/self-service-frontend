@@ -10,8 +10,8 @@ import { ClientTroubleshootPage } from '@/pages/client/ClientTroubleshootPage';
 import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage';
 import { AdminTasksPage } from '@/pages/admin/AdminTasksPage';
 import { AdminLogsPage } from '@/pages/admin/AdminLogsPage';
-import { AccessControlPage } from '@/pages/admin/AccessControlPage';
 import { AdminCreateTaskPage } from '@/pages/admin/AdminCreateTaskPage';
+import { AdminTaskTypesPage } from '@/pages/admin/AdminTaskTypesPage';
 
 const LandingPage = () => (
   <Stack sx={{ minHeight: '100vh', px: 2, py: 6 }} alignItems="center" justifyContent="center">
@@ -76,6 +76,7 @@ export const router = createBrowserRouter([
       { path: 'overview', element: <AdminOverviewPage /> },
       { path: 'tasks', element: <AdminTasksPage /> },
       { path: 'create-task', element: <AdminCreateTaskPage /> },
+      { path: 'task-types', element: <AdminTaskTypesPage /> },
       { path: 'tasks/:taskId', element: <ClientTaskDetailsPage /> },
       { path: 'logs', element: <AdminLogsPage /> },
     ],

@@ -7,10 +7,12 @@ class MockDb {
   tasks: Task[];
 
   logs: LogEntry[];
+  taskTypes: string[];
 
   constructor() {
     this.tasks = seedTasks();
     this.logs = seedLogs(this.tasks);
+    this.taskTypes = ['T1', 'T2', 'T3', 'T4'];
   }
 
   touchTask(taskId: number) {

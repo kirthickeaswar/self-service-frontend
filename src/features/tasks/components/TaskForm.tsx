@@ -1,7 +1,8 @@
 import { Alert, Button, Card, CardContent, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreateScheduleInput, CreateTaskInput, TaskType } from '@/types/domain';
 import { ensureOwnerInAccess, parseAccessEmails } from '@/features/tasks/utils/access';
+import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { ScheduleForm } from './ScheduleForm';
 
 interface TaskFormProps {
@@ -18,18 +19,25 @@ const defaultSchedule: CreateScheduleInput = {
 };
 
 export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
+  const { taskTypes } = useTaskTypes();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [additionalAccessEmails, setAdditionalAccessEmails] = useState('');
-  const [type, setType] = useState<TaskType>('T1');
+  const [type, setType] = useState<TaskType>('');
   const [includeSchedule, setIncludeSchedule] = useState(false);
   const [schedule, setSchedule] = useState<CreateScheduleInput>(defaultSchedule);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!type && taskTypes.length > 0) {
+      setType(taskTypes[0]);
+    }
+  }, [taskTypes, type]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    if (!name.trim() || !description.trim()) {
+    if (!name.trim() || !description.trim() || !type) {
       return;
     }
 
@@ -46,7 +54,7 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
       setName('');
       setDescription('');
       setAdditionalAccessEmails('');
-      setType('T1');
+      setType(taskTypes[0] ?? '');
       setIncludeSchedule(false);
       setSchedule(defaultSchedule);
     } catch (err) {
@@ -80,10 +88,11 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
             helperText="Add distribution list members. Owner cannot be removed."
           />
           <TextField select label="Task Type" value={type} onChange={(event) => setType(event.target.value as TaskType)}>
-            <MenuItem value="T1">T1</MenuItem>
-            <MenuItem value="T2">T2</MenuItem>
-            <MenuItem value="T3">T3</MenuItem>
-            <MenuItem value="T4">T4</MenuItem>
+            {taskTypes.map((taskType) => (
+              <MenuItem key={taskType} value={taskType}>
+                {taskType}
+              </MenuItem>
+            ))}
           </TextField>
           <FormControlLabel
             control={<Checkbox checked={includeSchedule} onChange={(event) => setIncludeSchedule(event.target.checked)} />}

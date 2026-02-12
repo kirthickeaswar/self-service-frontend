@@ -12,8 +12,8 @@ import { Task } from '@/types/domain';
 interface TasksTableProps {
   rows: Task[];
   showOwner?: boolean;
-  previousRunsByTask: Record<string, string | undefined>;
-  nextRunsByTask: Record<string, string | undefined>;
+  previousRunsByTask: Record<number, string | undefined>;
+  nextRunsByTask: Record<number, string | undefined>;
   onView: (task: Task) => void;
   onTogglePause: (task: Task) => void;
   onDelete: (task: Task) => void;

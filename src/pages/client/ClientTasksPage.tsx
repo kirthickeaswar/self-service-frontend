@@ -10,6 +10,7 @@ import { useSnackbar } from '@/app/SnackbarContext';
 import { logsApi } from '@/features/logs/api/logsApi';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { useTaskFilters } from '@/features/tasks/hooks/useTaskFilters';
+import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { TasksTable } from '@/features/tasks/components/TasksTable';
 import { LogEntry, Task } from '@/types/domain';
 
@@ -19,17 +20,18 @@ export const ClientTasksPage = () => {
   const navigate = useNavigate();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [previousRunsByTask, setPreviousRunsByTask] = useState<Record<string, string | undefined>>({});
-  const [nextRunsByTask, setNextRunsByTask] = useState<Record<string, string | undefined>>({});
+  const [previousRunsByTask, setPreviousRunsByTask] = useState<Record<number, string | undefined>>({});
+  const [nextRunsByTask, setNextRunsByTask] = useState<Record<number, string | undefined>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedToDelete, setSelectedToDelete] = useState<Task | null>(null);
   const [busy, setBusy] = useState(false);
 
   const { search, setSearch, type, setType, status, setStatus, filters } = useTaskFilters();
+  const { taskTypes } = useTaskTypes();
 
   const buildPreviousRuns = (taskData: Task[], logs: LogEntry[]) => {
-    const result: Record<string, string | undefined> = {};
+    const result: Record<number, string | undefined> = {};
     const now = new Date();
     taskData.forEach((task) => {
       const latest = logs
@@ -50,7 +52,7 @@ export const ClientTasksPage = () => {
   };
 
   const buildNextRuns = (taskData: Task[]) => {
-    const result: Record<string, string | undefined> = {};
+    const result: Record<number, string | undefined> = {};
     taskData.forEach((task) => {
       const next = task.schedules
         .filter((schedule) => schedule.status === 'SCHEDULED')
@@ -137,10 +139,11 @@ export const ClientTasksPage = () => {
             <Grid size={{ xs: 12, md: 3.5 }}>
               <TextField fullWidth select label="Type" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
                 <MenuItem value="ALL">All</MenuItem>
-                <MenuItem value="T1">T1</MenuItem>
-                <MenuItem value="T2">T2</MenuItem>
-                <MenuItem value="T3">T3</MenuItem>
-                <MenuItem value="T4">T4</MenuItem>
+                {taskTypes.map((taskType) => (
+                  <MenuItem key={taskType} value={taskType}>
+                    {taskType}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 3.5 }}>

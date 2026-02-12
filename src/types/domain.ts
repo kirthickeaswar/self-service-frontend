@@ -1,4 +1,4 @@
-export type TaskType = 'T1' | 'T2' | 'T3' | 'T4';
+export type TaskType = string;
 export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED';
 
 export type ScheduleMode = 'RECURRING' | 'NON_RECURRING';

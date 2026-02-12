@@ -12,6 +12,9 @@ import {
 import { apiServer } from '@/mocks/server';
 
 export const tasksApi = {
+  taskTypes: (): Promise<string[]> => apiServer.getTaskTypes(),
+  addTaskType: (type: string): Promise<string[]> => apiServer.addTaskType(type),
+  deleteTaskType: (type: string): Promise<string[]> => apiServer.deleteTaskType(type),
   list: (filters?: TaskFilters): Promise<Task[]> => apiServer.getTasks(filters),
   getById: (taskId: number): Promise<Task> => apiServer.getTask(taskId),
   create: (payload: CreateTaskInput): Promise<Task> => apiServer.createTask(payload),

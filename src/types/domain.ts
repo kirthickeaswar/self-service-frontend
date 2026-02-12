@@ -34,7 +34,7 @@ export interface Task {
   description: string;
   accessEmails: string[];
   type: TaskType;
-  owner: string;
+  createdBy: string;
   status: TaskStatus;
   createdAt: string;
   updatedAt: string;
@@ -52,7 +52,14 @@ export interface LogEntry {
   source: LogSource;
 }
 
-export type Role = 'CLIENT' | 'ADMIN';
+export type Role = 'ADMIN' | 'EDITOR' | 'VIEWER';
+
+export interface User {
+  id: number;
+  username: string;
+  password: string;
+  role: Role;
+}
 
 export interface TaskTypeDefinition {
   name: TaskType;
@@ -63,7 +70,7 @@ export interface TaskFilters {
   search?: string;
   type?: TaskType | 'ALL';
   status?: TaskStatus | 'ALL';
-  owner?: string;
+  createdBy?: string;
 }
 
 export interface LogFilters {
@@ -95,7 +102,7 @@ export interface CreateTaskInput {
   description: string;
   accessEmails: string[];
   type: TaskType;
-  owner: string;
+  createdBy: string;
   schedule?: CreateScheduleInput;
 }
 

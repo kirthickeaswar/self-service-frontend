@@ -21,8 +21,8 @@ export const AdminTasksPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [previousRunsByTask, setPreviousRunsByTask] = useState<Record<number, string | undefined>>({});
   const [nextRunsByTask, setNextRunsByTask] = useState<Record<number, string | undefined>>({});
-  const [owners, setOwners] = useState<string[]>([]);
-  const [owner, setOwner] = useState(searchParams.get('owner') ?? 'ALL');
+  const [creators, setCreators] = useState<string[]>([]);
+  const [createdBy, setCreatedBy] = useState(searchParams.get('createdBy') ?? 'ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedToDelete, setSelectedToDelete] = useState<Task | null>(null);
@@ -66,15 +66,15 @@ export const AdminTasksPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [taskData, ownerList, logs] = await Promise.all([
-        tasksApi.list({ ...filters, owner: owner === 'ALL' ? undefined : owner }),
-        tasksApi.owners(),
+      const [taskData, creatorList, logs] = await Promise.all([
+        tasksApi.list({ ...filters, createdBy: createdBy === 'ALL' ? undefined : createdBy }),
+        tasksApi.creators(),
         logsApi.list({}),
       ]);
       setTasks(taskData);
       setPreviousRunsByTask(buildPreviousRuns(taskData, logs));
       setNextRunsByTask(buildNextRuns(taskData));
-      setOwners(ownerList);
+      setCreators(creatorList);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load tasks');
     } finally {
@@ -84,22 +84,22 @@ export const AdminTasksPage = () => {
 
   useEffect(() => {
     void load();
-  }, [filters.search, filters.status, filters.type, owner]);
+  }, [filters.search, filters.status, filters.type, createdBy]);
 
   useEffect(() => {
-    const ownerFromParams = searchParams.get('owner') ?? 'ALL';
-    setOwner(ownerFromParams);
+    const creatorFromParams = searchParams.get('createdBy') ?? 'ALL';
+    setCreatedBy(creatorFromParams);
   }, [searchParams]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);
-    if (owner === 'ALL') {
-      nextParams.delete('owner');
+    if (createdBy === 'ALL') {
+      nextParams.delete('createdBy');
     } else {
-      nextParams.set('owner', owner);
+      nextParams.set('createdBy', createdBy);
     }
     setSearchParams(nextParams, { replace: true });
-  }, [owner]);
+  }, [createdBy]);
 
   const toggleStatus = async (task: Task) => {
     if (task.status === 'NOT_SCHEDULED') {
@@ -172,9 +172,15 @@ export const AdminTasksPage = () => {
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 2.5 }}>
-              <TextField fullWidth select label="Owner" value={owner} onChange={(event) => setOwner(event.target.value)}>
+              <TextField
+                fullWidth
+                select
+                label="Created By"
+                value={createdBy}
+                onChange={(event) => setCreatedBy(event.target.value)}
+              >
                 <MenuItem value="ALL">All</MenuItem>
-                {owners.map((item) => (
+                {creators.map((item) => (
                   <MenuItem key={item} value={item}>
                     {item}
                   </MenuItem>
@@ -200,7 +206,7 @@ export const AdminTasksPage = () => {
       ) : (
         <TasksTable
           rows={tasks}
-          showOwner
+          showCreatedBy
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/admin/tasks/${task.id}`)}

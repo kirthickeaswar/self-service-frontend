@@ -9,6 +9,7 @@ import {
   TaskFilters,
   TaskStatus,
   TaskTypeDefinition,
+  User,
   UpdateScheduleInput,
   UpdateTaskInput,
 } from '@/types/domain';
@@ -46,13 +47,15 @@ const byTaskFilters = (tasks: Task[], filters?: TaskFilters) => {
   return tasks.filter((task) => {
     const matchesSearch =
       !filters.search ||
-      `${task.name} ${task.description} ${task.owner} ${task.accessEmails.join(' ')}`.toLowerCase().includes(filters.search.toLowerCase());
+      `${task.name} ${task.description} ${task.createdBy} ${task.accessEmails.join(' ')}`.toLowerCase().includes(
+        filters.search.toLowerCase(),
+      );
 
     const matchesType = !filters.type || filters.type === 'ALL' || task.type === filters.type;
     const matchesStatus = !filters.status || filters.status === 'ALL' || task.status === filters.status;
-    const matchesOwner = !filters.owner || task.owner === filters.owner;
+    const matchesCreator = !filters.createdBy || task.createdBy === filters.createdBy;
 
-    return matchesSearch && matchesType && matchesStatus && matchesOwner;
+    return matchesSearch && matchesType && matchesStatus && matchesCreator;
   });
 };
 
@@ -107,6 +110,63 @@ const withMock = <T>(resolver: () => T, failureRate = 0): Promise<T> => {
 };
 
 export const apiServer = {
+  login(username: string, password: string) {
+    return withMock(() => {
+      const normalized = username.trim().toLowerCase();
+      const user = mockDb.users.find((item) => item.username.toLowerCase() === normalized);
+      if (!user || user.password !== password) {
+        throw new Error('Invalid username or password');
+      }
+      return { id: user.id, username: user.username, role: user.role };
+    }, readFailureRate);
+  },
+
+  getUsers() {
+    return withMock(() => mockDb.users.map((user) => ({ ...user })), readFailureRate);
+  },
+
+  createUser(payload: Pick<User, 'username' | 'password' | 'role'>) {
+    return withMock(() => {
+      const username = payload.username.trim();
+      const password = payload.password.trim();
+      if (!username || !password) {
+        throw new Error('Username and password are required');
+      }
+      if (mockDb.users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
+        throw new Error('Username already exists');
+      }
+      const user: User = { id: id(), username, password, role: payload.role };
+      mockDb.users.push(user);
+      return mockDb.users.map((item) => ({ ...item }));
+    }, writeFailureRate);
+  },
+
+  updateUserRole(userId: number, role: User['role']) {
+    return withMock(() => {
+      const user = mockDb.users.find((item) => item.id === userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      user.role = role;
+      return mockDb.users.map((item) => ({ ...item }));
+    }, writeFailureRate);
+  },
+
+  deleteUser(userId: number) {
+    return withMock(() => {
+      const target = mockDb.users.find((item) => item.id === userId);
+      if (!target) {
+        throw new Error('User not found');
+      }
+      const remainingAdmins = mockDb.users.filter((item) => item.role === 'ADMIN' && item.id !== userId);
+      if (target.role === 'ADMIN' && remainingAdmins.length === 0) {
+        throw new Error('At least one admin user must remain');
+      }
+      mockDb.users = mockDb.users.filter((item) => item.id !== userId);
+      return { success: true };
+    }, writeFailureRate);
+  },
+
   getTaskTypeNames() {
     return mockDb.taskTypes.map((taskType) => taskType.name);
   },
@@ -236,7 +296,7 @@ export const apiServer = {
         description: input.description,
         accessEmails: [...new Set(input.accessEmails.map((email) => email.trim().toLowerCase()).filter(Boolean))],
         type: input.type,
-        owner: input.owner,
+        createdBy: input.createdBy,
         status: schedules.length > 0 ? 'ACTIVE' : 'NOT_SCHEDULED',
         createdAt: now,
         updatedAt: now,
@@ -250,7 +310,7 @@ export const apiServer = {
         taskId,
         timestamp: now,
         level: 'INFO',
-        message: `Task ${created.name} created by ${created.owner}`,
+        message: `Task ${created.name} created by ${created.createdBy}`,
         details: 'Task initialized in mock scheduler store.',
         source: 'SYSTEM',
       });
@@ -530,7 +590,7 @@ export const apiServer = {
     );
   },
 
-  getOwners() {
-    return withMock(() => [...new Set(mockDb.tasks.map((task) => task.owner))], readFailureRate);
+  getCreators() {
+    return withMock(() => [...new Set(mockDb.tasks.map((task) => task.createdBy))], readFailureRate);
   },
 };

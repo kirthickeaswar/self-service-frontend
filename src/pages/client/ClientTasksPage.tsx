@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useAuth } from '@/app/AuthContext';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { logsApi } from '@/features/logs/api/logsApi';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
@@ -14,10 +15,9 @@ import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { TasksTable } from '@/features/tasks/components/TasksTable';
 import { LogEntry, Task } from '@/types/domain';
 
-const clientOwner = 'alice@mock.com';
-
 export const ClientTasksPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [previousRunsByTask, setPreviousRunsByTask] = useState<Record<number, string | undefined>>({});
@@ -66,7 +66,7 @@ export const ClientTasksPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [data, logs] = await Promise.all([tasksApi.list({ ...filters, owner: clientOwner }), logsApi.list({})]);
+      const [data, logs] = await Promise.all([tasksApi.list(filters), logsApi.list({})]);
       setTasks(data);
       setPreviousRunsByTask(buildPreviousRuns(data, logs));
       setNextRunsByTask(buildNextRuns(data));
@@ -120,11 +120,13 @@ export const ClientTasksPage = () => {
     <Stack spacing={3}>
       <PageHeader
         title="Tasks"
-        subtitle="Manage your tasks and schedules"
+        subtitle="View and manage all tasks."
         actions={
-          <Button variant="contained" onClick={() => navigate('/client/create-task')}>
-            Create Task
-          </Button>
+          user?.role === 'EDITOR' ? (
+            <Button variant="contained" onClick={() => navigate('/app/create-task')}>
+              Create Task
+            </Button>
+          ) : undefined
         }
       />
 
@@ -134,7 +136,7 @@ export const ClientTasksPage = () => {
         <CardContent>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 5 }}>
-              <TextField fullWidth label="Search task/owner" value={search} onChange={(event) => setSearch(event.target.value)} />
+              <TextField fullWidth label="Search task" value={search} onChange={(event) => setSearch(event.target.value)} />
             </Grid>
             <Grid size={{ xs: 12, md: 3.5 }}>
               <TextField fullWidth select label="Type" value={type} onChange={(event) => setType(event.target.value as typeof type)}>
@@ -182,10 +184,11 @@ export const ClientTasksPage = () => {
           rows={tasks}
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
-          onView={(task) => navigate(`/client/tasks/${task.id}`)}
-          onViewHistory={(task) => navigate(`/client/logs?taskId=${task.id}`)}
+          onView={(task) => navigate(`/app/tasks/${task.id}`)}
+          onViewHistory={(task) => navigate(`/app/logs?taskId=${task.id}`)}
           onTogglePause={(task) => void toggleTaskStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}
+          readOnly={user?.role === 'VIEWER'}
         />
       )}
 

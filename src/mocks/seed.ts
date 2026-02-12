@@ -10,7 +10,7 @@ import {
 } from '@/types/domain';
 import { calculateNextRunAt, toIsoDateStart } from '@/features/tasks/utils/schedule';
 
-const owners = ['alice@mock.com'];
+const creators = ['alice'];
 const taskTypes: TaskType[] = ['T1', 'T2', 'T3', 'T4'];
 const scheduleStatuses: ScheduleStatus[] = ['SCHEDULED', 'PAUSED', 'COMPLETED', 'FAILED'];
 const levels: LogLevel[] = ['INFO', 'WARN', 'ERROR'];
@@ -48,7 +48,7 @@ export const seedTasks = (): Task[] => {
     return tasks;
   }
 
-  const owner = owners[0];
+  const createdBy = creators[0];
   const now = Date.now();
 
   const recurringTaskId = makeId();
@@ -110,7 +110,7 @@ export const seedTasks = (): Task[] => {
       description: 'Recurring hourly task from 9:00 AM to 6:00 PM.',
       accessEmails: ['ops@mock.com'],
       type: taskTypes[0],
-      owner,
+      createdBy,
       status: 'ACTIVE',
       createdAt: new Date(now - 4 * 86400000).toISOString(),
       updatedAt: new Date(now - 1 * 3600000).toISOString(),
@@ -122,7 +122,7 @@ export const seedTasks = (): Task[] => {
       description: 'One-time scheduled task for tomorrow.',
       accessEmails: ['batch-team@mock.com'],
       type: taskTypes[1],
-      owner,
+      createdBy,
       status: 'ACTIVE',
       createdAt: new Date(now - 3 * 86400000).toISOString(),
       updatedAt: new Date(now - 2 * 3600000).toISOString(),
@@ -134,7 +134,7 @@ export const seedTasks = (): Task[] => {
       description: 'Task created without schedules.',
       accessEmails: [],
       type: taskTypes[2],
-      owner,
+      createdBy,
       status: 'NOT_SCHEDULED',
       createdAt: new Date(now - 2 * 86400000).toISOString(),
       updatedAt: new Date(now - 3 * 3600000).toISOString(),
@@ -146,7 +146,7 @@ export const seedTasks = (): Task[] => {
       description: 'Task with failed execution requiring troubleshooting.',
       accessEmails: ['support@mock.com'],
       type: taskTypes[3],
-      owner,
+      createdBy,
       status: 'ERROR',
       createdAt: new Date(now - 1 * 86400000).toISOString(),
       updatedAt: new Date(now - 30 * 60000).toISOString(),
@@ -169,7 +169,7 @@ export const seedTasks = (): Task[] => {
       description: `Automated workflow ${i + 1} for client-side schedule execution and monitoring.`,
       accessEmails: [],
       type: taskTypes[i % taskTypes.length],
-      owner,
+      createdBy,
       status: i % 3 === 0 ? 'ACTIVE' : i % 3 === 1 ? 'PAUSED' : 'ERROR',
       createdAt,
       updatedAt,

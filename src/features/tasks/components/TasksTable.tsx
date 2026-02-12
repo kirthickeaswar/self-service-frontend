@@ -12,7 +12,8 @@ import { Task } from '@/types/domain';
 
 interface TasksTableProps {
   rows: Task[];
-  showOwner?: boolean;
+  showCreatedBy?: boolean;
+  readOnly?: boolean;
   previousRunsByTask: Record<number, string | undefined>;
   nextRunsByTask: Record<number, string | undefined>;
   onView: (task: Task) => void;
@@ -25,7 +26,8 @@ const renderDateTime = (value?: string) => (value ? new Date(value).toLocaleStri
 
 export const TasksTable = ({
   rows,
-  showOwner,
+  showCreatedBy,
+  readOnly,
   previousRunsByTask,
   nextRunsByTask,
   onView,
@@ -51,12 +53,12 @@ export const TasksTable = ({
       label: 'Type',
       render: (task: Task) => task.type,
     },
-    ...(showOwner
+    ...(showCreatedBy
       ? [
           {
-            id: 'owner',
-            label: 'Owner',
-            render: (task: Task) => task.owner,
+            id: 'createdBy',
+            label: 'Created By',
+            render: (task: Task) => task.createdBy,
           },
         ]
       : []),
@@ -122,7 +124,7 @@ export const TasksTable = ({
           <HistoryIcon fontSize="small" sx={{ mr: 1 }} /> View History
         </MenuItem>
         <MenuItem
-          disabled={selectedTask?.status === 'NOT_SCHEDULED'}
+          disabled={readOnly || selectedTask?.status === 'NOT_SCHEDULED'}
           onClick={() => {
             if (selectedTask) {
               onTogglePause(selectedTask);
@@ -140,6 +142,7 @@ export const TasksTable = ({
             : `${selectedTask?.status === 'PAUSED' ? 'Resume' : 'Pause'} Task`}
         </MenuItem>
         <MenuItem
+          disabled={readOnly}
           onClick={() => {
             if (selectedTask) {
               onDelete(selectedTask);

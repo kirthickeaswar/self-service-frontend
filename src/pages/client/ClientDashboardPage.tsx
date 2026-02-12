@@ -5,14 +5,14 @@ import Grid from '@mui/material/Grid';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
+import { useAuth } from '@/app/AuthContext';
 import { formatTimeDisplay } from '@/features/tasks/utils/schedule';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { Task } from '@/types/domain';
 
-const clientOwner = 'alice@mock.com';
-
 export const ClientDashboardPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export const ClientDashboardPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const taskData = await tasksApi.list({ owner: clientOwner });
+      const taskData = await tasksApi.list();
       setTasks(taskData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -64,7 +64,7 @@ export const ClientDashboardPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Client Overview" subtitle="Monitor and operate your scheduled tasks." />
+      <PageHeader title="User Overview" subtitle="Monitor and operate scheduled tasks." />
 
       {error ? <Alert severity="error">{error}</Alert> : null}
 
@@ -93,10 +93,12 @@ export const ClientDashboardPage = () => {
             Quick Actions
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => navigate('/client/create-task')}>
-              Create Task
-            </Button>
-            <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/client/logs')}>
+            {user?.role === 'EDITOR' ? (
+              <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => navigate('/app/create-task')}>
+                Create Task
+              </Button>
+            ) : null}
+            <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/app/logs')}>
               Logs
             </Button>
           </Stack>

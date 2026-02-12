@@ -6,7 +6,7 @@ import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { ScheduleForm } from './ScheduleForm';
 
 interface TaskFormProps {
-  owner: string;
+  createdBy: string;
   submitting?: boolean;
   onSubmit: (payload: CreateTaskInput) => Promise<void>;
 }
@@ -17,7 +17,7 @@ const defaultSchedule: CreateScheduleInput = {
   cronExpression: '0 * * * *',
 };
 
-export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
+export const TaskForm = ({ createdBy, submitting, onSubmit }: TaskFormProps) => {
   const { taskTypes } = useTaskTypes();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -46,7 +46,7 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
         description: description.trim(),
         accessEmails: parseAccessEmails(emailList),
         type,
-        owner,
+        createdBy,
         schedule: includeSchedule ? schedule : undefined,
       });
 

@@ -5,9 +5,11 @@ import AddTaskIcon from '@mui/icons-material/AddTask';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CategoryIcon from '@mui/icons-material/Category';
+import GroupIcon from '@mui/icons-material/Group';
 import {
   AppBar,
   Box,
+  Button,
   Divider,
   Drawer,
   IconButton,
@@ -15,7 +17,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem,
   Stack,
   Toolbar,
   Typography,
@@ -23,6 +24,7 @@ import {
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/app/AuthContext';
 
 const drawerWidth = 260;
 
@@ -32,11 +34,17 @@ interface MenuLink {
   icon: ReactNode;
 }
 
-const clientLinks: MenuLink[] = [
-  { label: 'Dashboard', path: '/client/dashboard', icon: <DashboardIcon fontSize="small" /> },
-  { label: 'Tasks', path: '/client/tasks', icon: <AssignmentIcon fontSize="small" /> },
-  { label: 'Create Task', path: '/client/create-task', icon: <AddTaskIcon fontSize="small" /> },
-  { label: 'Logs', path: '/client/logs', icon: <DescriptionIcon fontSize="small" /> },
+const viewerLinks: MenuLink[] = [
+  { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
+  { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
+  { label: 'Logs', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
+];
+
+const editorLinks: MenuLink[] = [
+  { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
+  { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
+  { label: 'Create Task', path: '/app/create-task', icon: <AddTaskIcon fontSize="small" /> },
+  { label: 'Logs', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 
 const adminLinks: MenuLink[] = [
@@ -44,16 +52,21 @@ const adminLinks: MenuLink[] = [
   { label: 'All Tasks', path: '/admin/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/admin/create-task', icon: <AddTaskIcon fontSize="small" /> },
   { label: 'Task Types', path: '/admin/task-types', icon: <CategoryIcon fontSize="small" /> },
+  { label: 'Users', path: '/admin/users', icon: <GroupIcon fontSize="small" /> },
   { label: 'Logs', path: '/admin/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 
 export const AppShell = () => {
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const isAdminRoute = location.pathname.startsWith('/admin');
 
-  const links = useMemo(() => (isAdminRoute ? adminLinks : clientLinks), [isAdminRoute]);
+  const links = useMemo(() => {
+    if (user?.role === 'ADMIN') return adminLinks;
+    if (user?.role === 'EDITOR') return editorLinks;
+    return viewerLinks;
+  }, [user?.role]);
 
   const drawerContent = (
     <Box sx={{ px: 2, py: 2 }}>
@@ -84,7 +97,7 @@ export const AppShell = () => {
       <Divider sx={{ my: 1.5 }} />
 
       <Typography variant="caption" color="text.secondary" sx={{ px: 1, mb: 1, display: 'block' }}>
-        {isAdminRoute ? 'Admin Modules' : 'Client Modules'}
+        {user?.role === 'ADMIN' ? 'Admin Modules' : 'User Modules'}
       </Typography>
       <List disablePadding>
         {links.map((link) => {
@@ -128,16 +141,25 @@ export const AppShell = () => {
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" sx={{ fontSize: '1rem' }}>
-              {isAdminRoute ? 'Admin Dashboard' : 'Client Dashboard'}
+              {user?.role === 'ADMIN' ? 'Admin Dashboard' : 'User Dashboard'}
             </Typography>
           </Stack>
 
-          <MenuItem
-            sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, px: 1.5, py: 0.75 }}
-            onClick={() => navigate(isAdminRoute ? '/client/dashboard' : '/admin/overview')}
-          >
-            {isAdminRoute ? 'Open Client Portal' : 'Open Admin Portal'}
-          </MenuItem>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="caption" color="text.secondary">
+              {user?.username} ({user?.role})
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+            >
+              Logout
+            </Button>
+          </Stack>
         </Toolbar>
       </AppBar>
 

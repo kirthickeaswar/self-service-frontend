@@ -1,8 +1,8 @@
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import {
   Alert,
   Button,
@@ -28,19 +28,17 @@ import {
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '@/app/AuthContext';
+import { useSnackbar } from '@/app/SnackbarContext';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusChip } from '@/components/common/StatusChip';
-import { useSnackbar } from '@/app/SnackbarContext';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { ScheduleForm } from '@/features/tasks/components/ScheduleForm';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
-import {
-  formatDateDisplay,
-  formatTimeDisplay,
-} from '@/features/tasks/utils/schedule';
+import { formatDateDisplay, formatTimeDisplay } from '@/features/tasks/utils/schedule';
 import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
 
 const defaultSchedule: CreateScheduleInput = {
@@ -52,8 +50,12 @@ const defaultSchedule: CreateScheduleInput = {
 export const ClientTaskDetailsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const { taskId } = useParams();
   const taskIdNumber = Number(taskId);
+  const isAdminView = location.pathname.startsWith('/admin');
+  const canEdit = isAdminView || user?.role !== 'VIEWER';
+  const backPath = isAdminView ? '/admin/tasks' : '/app/tasks';
   const { showToast } = useSnackbar();
   const { taskTypes } = useTaskTypes();
   const [task, setTask] = useState<Task | null>(null);
@@ -65,23 +67,16 @@ export const ClientTaskDetailsPage = () => {
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
-  const [taskAdditionalAccessEmails, setTaskAdditionalAccessEmails] = useState('');
+  const [taskAccessEmails, setTaskAccessEmails] = useState('');
   const [taskType, setTaskType] = useState<TaskType>('T1');
   const [scheduleToEdit, setScheduleToEdit] = useState<Schedule | null>(null);
   const [editScheduleInput, setEditScheduleInput] = useState<CreateScheduleInput>(defaultSchedule);
-  const isAdminView = location.pathname.startsWith('/admin');
-  const backPath = isAdminView ? '/admin/tasks' : '/client/tasks';
 
   const load = async () => {
-    if (!taskId) {
-      return;
-    }
+    if (!taskId || Number.isNaN(taskIdNumber)) return;
     setLoading(true);
     setError(null);
     try {
-      if (Number.isNaN(taskIdNumber)) {
-        throw new Error('Invalid task id');
-      }
       const data = await tasksApi.getById(taskIdNumber);
       setTask(data);
     } catch (err) {
@@ -97,8 +92,8 @@ export const ClientTaskDetailsPage = () => {
 
   const toggleSchedule = async (schedule: Schedule) => {
     if (Number.isNaN(taskIdNumber)) return;
-    const next = schedule.status === 'PAUSED' ? 'SCHEDULED' : 'PAUSED';
     try {
+      const next = schedule.status === 'PAUSED' ? 'SCHEDULED' : 'PAUSED';
       await tasksApi.updateScheduleStatus(taskIdNumber, schedule.id, next);
       showToast(`Schedule ${next === 'PAUSED' ? 'paused' : 'resumed'}`, 'success');
       await load();
@@ -111,8 +106,8 @@ export const ClientTaskDetailsPage = () => {
     if (Number.isNaN(taskIdNumber) || !scheduleToDelete) return;
     try {
       await tasksApi.deleteSchedule(taskIdNumber, scheduleToDelete.id);
-      showToast('Schedule removed. Task remains active.', 'success');
       setScheduleToDelete(null);
+      showToast('Schedule removed', 'success');
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Delete failed', 'error');
@@ -123,9 +118,9 @@ export const ClientTaskDetailsPage = () => {
     if (Number.isNaN(taskIdNumber)) return;
     try {
       await tasksApi.addSchedule(taskIdNumber, scheduleInput);
-      showToast('Schedule created', 'success');
       setAddOpen(false);
       setScheduleInput(defaultSchedule);
+      showToast('Schedule created', 'success');
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Create schedule failed', 'error');
@@ -136,9 +131,7 @@ export const ClientTaskDetailsPage = () => {
     if (!task) return;
     setTaskName(task.name);
     setTaskDescription(task.description);
-    setTaskAdditionalAccessEmails(
-      stringifyAccessEmails(task.accessEmails.filter((email) => email.trim().toLowerCase() !== task.owner.trim().toLowerCase())),
-    );
+    setTaskAccessEmails(stringifyAccessEmails(task.accessEmails));
     setTaskType(task.type);
     setEditTaskOpen(true);
   };
@@ -146,15 +139,14 @@ export const ClientTaskDetailsPage = () => {
   const saveTaskEdit = async () => {
     if (Number.isNaN(taskIdNumber)) return;
     try {
-      const accessEmails = parseAccessEmails(taskAdditionalAccessEmails);
       await tasksApi.update(taskIdNumber, {
         name: taskName.trim(),
         description: taskDescription.trim(),
-        accessEmails,
+        accessEmails: parseAccessEmails(taskAccessEmails),
         type: taskType,
       });
-      showToast('Task updated successfully', 'success');
       setEditTaskOpen(false);
+      showToast('Task updated', 'success');
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Task update failed', 'error');
@@ -175,8 +167,8 @@ export const ClientTaskDetailsPage = () => {
     if (Number.isNaN(taskIdNumber) || !scheduleToEdit) return;
     try {
       await tasksApi.updateSchedule(taskIdNumber, scheduleToEdit.id, editScheduleInput);
-      showToast('Schedule updated successfully', 'success');
       setScheduleToEdit(null);
+      showToast('Schedule updated', 'success');
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Schedule update failed', 'error');
@@ -186,20 +178,13 @@ export const ClientTaskDetailsPage = () => {
   if (loading) {
     return (
       <Stack spacing={2}>
-        <Skeleton height={48} width={320} />
+        <Skeleton height={48} />
         <Skeleton height={200} />
-        <Skeleton height={260} />
       </Stack>
     );
   }
-
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-
-  if (!task) {
-    return <EmptyState title="Task not found" />;
-  }
+  if (error) return <Alert severity="error">{error}</Alert>;
+  if (!task) return <EmptyState title="Task not found" />;
 
   return (
     <Stack spacing={3}>
@@ -208,9 +193,11 @@ export const ClientTaskDetailsPage = () => {
         subtitle="Inspect and control schedules for this task."
         actions={
           <Stack direction="row" spacing={1}>
-            <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={openTaskEdit}>
-              Edit Task
-            </Button>
+            {canEdit ? (
+              <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={openTaskEdit}>
+                Edit Task
+              </Button>
+            ) : null}
             <Button variant="outlined" onClick={() => navigate(backPath)}>
               Back to Tasks
             </Button>
@@ -245,27 +232,17 @@ export const ClientTaskDetailsPage = () => {
               </Typography>
               <StatusChip status={task.status} />
             </Grid>
-            <Grid size={{ xs: 12, md: 2 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <Typography variant="body2" color="text.secondary">
                 Created By
               </Typography>
-              <Typography variant="subtitle2">{task.owner}</Typography>
+              <Typography variant="subtitle2">{task.createdBy}</Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
                 Email List
               </Typography>
-              <Typography variant="subtitle2">{task.accessEmails.join(', ')}</Typography>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="caption" color="text.secondary">
-                Created: {new Date(task.createdAt).toLocaleString()}
-              </Typography>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="caption" color="text.secondary">
-                Updated: {new Date(task.updatedAt).toLocaleString()}
-              </Typography>
+              <Typography variant="subtitle2">{task.accessEmails.join(', ') || 'N/A'}</Typography>
             </Grid>
           </Grid>
         </CardContent>
@@ -275,9 +252,11 @@ export const ClientTaskDetailsPage = () => {
         <CardContent>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
             <Typography variant="h6">Schedules</Typography>
-            <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => setAddOpen(true)}>
-              Add Schedule
-            </Button>
+            {canEdit ? (
+              <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => setAddOpen(true)}>
+                Add Schedule
+              </Button>
+            ) : null}
           </Stack>
 
           {task.schedules.length === 0 ? (
@@ -297,31 +276,27 @@ export const ClientTaskDetailsPage = () => {
               <TableBody>
                 {task.schedules.map((schedule) => (
                   <TableRow key={schedule.id} hover>
-                    <TableCell>{schedule.mode === 'CRON' || schedule.mode === 'RECURRING' ? 'RECURRING' : 'NON_RECURRING'}</TableCell>
-                    <TableCell>
-                      {schedule.mode === 'CRON' || schedule.mode === 'RECURRING'
-                        ? 'From expression'
-                        : formatTimeDisplay(schedule.time)}
-                    </TableCell>
-                    <TableCell>
-                      {schedule.mode === 'CRON' || schedule.mode === 'RECURRING'
-                        ? schedule.cronExpression ?? 'N/A'
-                        : formatDateDisplay(schedule.date)}
-                    </TableCell>
+                    <TableCell>{schedule.mode === 'NON_RECURRING' ? 'NON_RECURRING' : 'RECURRING'}</TableCell>
+                    <TableCell>{schedule.mode === 'NON_RECURRING' ? formatTimeDisplay(schedule.time) : 'From expression'}</TableCell>
+                    <TableCell>{schedule.mode === 'NON_RECURRING' ? formatDateDisplay(schedule.date) : schedule.cronExpression ?? 'N/A'}</TableCell>
                     <TableCell>{schedule.mode === 'NON_RECURRING' ? 'N/A' : new Date(schedule.nextRunAt).toLocaleString()}</TableCell>
                     <TableCell>
                       <StatusChip status={schedule.status} />
                     </TableCell>
                     <TableCell>
-                      <IconButton onClick={() => openScheduleEdit(schedule)}>
-                        <EditOutlinedIcon />
-                      </IconButton>
-                      <IconButton onClick={() => void toggleSchedule(schedule)}>
-                        {schedule.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
-                      </IconButton>
-                      <IconButton color="error" onClick={() => setScheduleToDelete(schedule)}>
-                        <DeleteOutlineIcon />
-                      </IconButton>
+                      {canEdit ? (
+                        <>
+                          <IconButton onClick={() => openScheduleEdit(schedule)}>
+                            <EditOutlinedIcon />
+                          </IconButton>
+                          <IconButton onClick={() => void toggleSchedule(schedule)}>
+                            {schedule.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
+                          </IconButton>
+                          <IconButton color="error" onClick={() => setScheduleToDelete(schedule)}>
+                            <DeleteOutlineIcon />
+                          </IconButton>
+                        </>
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -331,88 +306,80 @@ export const ClientTaskDetailsPage = () => {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={Boolean(scheduleToDelete)}
-        title="Delete Schedule"
-        description="This removes only the schedule; the parent task remains."
-        confirmText="Delete"
-        confirmColor="error"
-        onClose={() => setScheduleToDelete(null)}
-        onConfirm={() => void deleteSchedule()}
-      />
-
-      <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Add Schedule</DialogTitle>
-        <DialogContent>
-          <Stack sx={{ mt: 1 }}>
-            <ScheduleForm value={scheduleInput} onChange={setScheduleInput} />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => void addSchedule()}>
-            Add
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Task</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Update task name, description, and type.
-            </Typography>
-            <Alert severity="info">Task owner and status are managed separately.</Alert>
-            <TextField label="Task Name" value={taskName} onChange={(event) => setTaskName(event.target.value)} />
-            <TextField
-              label="Description"
-              value={taskDescription}
-              onChange={(event) => setTaskDescription(event.target.value)}
-              multiline
-              minRows={3}
-            />
-            <TextField
-              label="Email List (comma separated)"
-              value={taskAdditionalAccessEmails}
-              onChange={(event) => setTaskAdditionalAccessEmails(event.target.value)}
-              helperText="Add emails that should have access to this task."
-            />
-            <TextField select label="Task Type" value={taskType} onChange={(event) => setTaskType(event.target.value as TaskType)}>
-              {[...new Set([...taskTypes, taskType])].map((typeOption) => (
-                <MenuItem key={typeOption} value={typeOption}>
-                  {typeOption}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={!taskName.trim() || !taskDescription.trim()}
-            onClick={() => void saveTaskEdit()}
-          >
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={Boolean(scheduleToEdit)} onClose={() => setScheduleToEdit(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Schedule</DialogTitle>
-        <DialogContent>
-          <Stack sx={{ mt: 1 }}>
-            <ScheduleForm value={editScheduleInput} onChange={setEditScheduleInput} />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setScheduleToEdit(null)}>Cancel</Button>
-          <Button variant="contained" onClick={() => void saveScheduleEdit()}>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {canEdit ? (
+        <>
+          <ConfirmDialog
+            open={Boolean(scheduleToDelete)}
+            title="Delete Schedule"
+            description="This removes only the schedule; the parent task remains."
+            confirmText="Delete"
+            confirmColor="error"
+            onClose={() => setScheduleToDelete(null)}
+            onConfirm={() => void deleteSchedule()}
+          />
+          <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Add Schedule</DialogTitle>
+            <DialogContent>
+              <Stack sx={{ mt: 1 }}>
+                <ScheduleForm value={scheduleInput} onChange={setScheduleInput} />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setAddOpen(false)}>Cancel</Button>
+              <Button variant="contained" onClick={() => void addSchedule()}>
+                Add
+              </Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} fullWidth maxWidth="sm">
+            <DialogTitle>Edit Task</DialogTitle>
+            <DialogContent>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                <TextField label="Task Name" value={taskName} onChange={(event) => setTaskName(event.target.value)} />
+                <TextField
+                  label="Description"
+                  value={taskDescription}
+                  onChange={(event) => setTaskDescription(event.target.value)}
+                  multiline
+                  minRows={3}
+                />
+                <TextField
+                  label="Email List (comma separated)"
+                  value={taskAccessEmails}
+                  onChange={(event) => setTaskAccessEmails(event.target.value)}
+                />
+                <TextField select label="Task Type" value={taskType} onChange={(event) => setTaskType(event.target.value as TaskType)}>
+                  {[...new Set([...taskTypes, taskType])].map((typeOption) => (
+                    <MenuItem key={typeOption} value={typeOption}>
+                      {typeOption}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
+              <Button variant="contained" onClick={() => void saveTaskEdit()}>
+                Save
+              </Button>
+            </DialogActions>
+          </Dialog>
+          <Dialog open={Boolean(scheduleToEdit)} onClose={() => setScheduleToEdit(null)} fullWidth maxWidth="sm">
+            <DialogTitle>Edit Schedule</DialogTitle>
+            <DialogContent>
+              <Stack sx={{ mt: 1 }}>
+                <ScheduleForm value={editScheduleInput} onChange={setEditScheduleInput} />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setScheduleToEdit(null)}>Cancel</Button>
+              <Button variant="contained" onClick={() => void saveScheduleEdit()}>
+                Save
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </>
+      ) : null}
     </Stack>
   );
 };

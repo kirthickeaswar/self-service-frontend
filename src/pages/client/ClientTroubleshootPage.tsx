@@ -21,8 +21,6 @@ import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { LogEntry, LogLevel, Task } from '@/types/domain';
 import { useSearchParams } from 'react-router-dom';
 
-const clientOwner = 'alice@mock.com';
-
 export const ClientTroubleshootPage = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
@@ -44,7 +42,7 @@ export const ClientTroubleshootPage = () => {
     const init = async () => {
       setInitLoading(true);
       try {
-        const items = await tasksApi.list({ owner: clientOwner });
+        const items = await tasksApi.list();
         setTasks(items);
         const presetTaskId = searchParams.get('taskId');
         if (presetTaskId) {

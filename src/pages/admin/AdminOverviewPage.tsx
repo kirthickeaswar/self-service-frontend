@@ -44,7 +44,6 @@ export const AdminOverviewPage = () => {
   const attentionTasks = tasks.filter(
     (task) => task.status === 'ERROR' || task.schedules.some((schedule) => schedule.status === 'FAILED'),
   );
-  const users = [...new Set(tasks.map((task) => task.owner))];
 
   return (
     <Stack spacing={3}>
@@ -110,7 +109,10 @@ export const AdminOverviewPage = () => {
                 <List disablePadding>
                   {attentionTasks.slice(0, 6).map((task) => (
                     <ListItem key={task.id} divider>
-                      <ListItemText primary={`${task.name} (${task.owner})`} secondary={`Updated ${new Date(task.updatedAt).toLocaleString()}`} />
+                      <ListItemText
+                        primary={`${task.name} (${task.createdBy})`}
+                        secondary={`Updated ${new Date(task.updatedAt).toLocaleString()}`}
+                      />
                       <StatusChip status={task.status} />
                     </ListItem>
                   ))}
@@ -127,33 +129,11 @@ export const AdminOverviewPage = () => {
             Manage Users
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Open a user-specific task view.
+            Configure viewer/editor/admin assignments.
           </Typography>
-          {loading ? (
-            <Stack spacing={1}>
-              <Skeleton height={36} />
-              <Skeleton height={36} />
-            </Stack>
-          ) : (
-            <Stack spacing={1}>
-              {users.map((owner) => {
-                const count = tasks.filter((task) => task.owner === owner).length;
-                return (
-                  <Button
-                    key={owner}
-                    variant="outlined"
-                    sx={{ justifyContent: 'space-between' }}
-                    onClick={() => navigate(`/admin/tasks?owner=${encodeURIComponent(owner)}`)}
-                  >
-                    {owner}
-                    <Typography variant="caption" color="text.secondary">
-                      {count} tasks
-                    </Typography>
-                  </Button>
-                );
-              })}
-            </Stack>
-          )}
+          <Button variant="outlined" onClick={() => navigate('/admin/users')}>
+            Open User Management
+          </Button>
         </CardContent>
       </Card>
     </Stack>

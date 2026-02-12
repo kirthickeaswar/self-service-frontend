@@ -81,7 +81,7 @@ export const AdminLogsPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Admin Logs" subtitle="Centralized log stream across all tasks and owners." />
+      <PageHeader title="Admin Logs" subtitle="Centralized log stream across all tasks." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>

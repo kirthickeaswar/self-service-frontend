@@ -1,12 +1,14 @@
 import {
   CreateScheduleInput,
   CreateTaskInput,
+  Role,
   Schedule,
   ScheduleStatus,
   Task,
   TaskFilters,
   TaskStatus,
   TaskTypeDefinition,
+  User,
   UpdateScheduleInput,
   UpdateTaskInput,
 } from '@/types/domain';
@@ -31,5 +33,11 @@ export const tasksApi = {
     apiServer.deleteSchedule(taskId, scheduleId),
   updateScheduleStatus: (taskId: number, scheduleId: number, status: ScheduleStatus): Promise<Schedule> =>
     apiServer.updateScheduleStatus(taskId, scheduleId, status),
-  owners: (): Promise<string[]> => apiServer.getOwners(),
+  creators: (): Promise<string[]> => apiServer.getCreators(),
+  login: (username: string, password: string): Promise<{ id: number; username: string; role: Role }> =>
+    apiServer.login(username, password),
+  users: (): Promise<User[]> => apiServer.getUsers(),
+  createUser: (payload: Pick<User, 'username' | 'password' | 'role'>): Promise<User[]> => apiServer.createUser(payload),
+  updateUserRole: (userId: number, role: Role): Promise<User[]> => apiServer.updateUserRole(userId, role),
+  deleteUser: (userId: number): Promise<{ success: boolean }> => apiServer.deleteUser(userId),
 };

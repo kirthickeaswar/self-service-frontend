@@ -12,11 +12,9 @@ interface TaskFormProps {
 }
 
 const defaultSchedule: CreateScheduleInput = {
-  mode: 'RECURRING',
-  time: '09:00',
-  endTime: '18:00',
-  interval: 1,
-  frequency: 'DAILY',
+  mode: 'CRON',
+  time: '00:00',
+  cronExpression: '0 * * * *',
 };
 
 export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {

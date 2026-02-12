@@ -21,26 +21,20 @@ const makeId = () => idCounter++;
 
 const createSchedule = (taskId: number, index: number): Schedule => {
   const recurring = index % 2 === 0;
-  const mode = recurring ? 'RECURRING' : 'NON_RECURRING';
+  const mode = recurring ? 'CRON' : 'NON_RECURRING';
   const rawDate = recurring ? undefined : new Date(Date.now() + (index + 2) * 86400000);
   const date = rawDate ? toIsoDateStart(rawDate.toISOString().slice(0, 10)) : undefined;
   const time = `${String((8 + index * 2) % 24).padStart(2, '0')}:${index % 2 === 0 ? '30' : '00'}`;
-  const endTime = recurring ? `${String((10 + index * 2) % 24).padStart(2, '0')}:${index % 2 === 0 ? '30' : '00'}` : undefined;
-  const frequency = recurring
-    ? (['MINUTELY', 'HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'][index % 6] as CreateScheduleInput['frequency'])
-    : undefined;
-  const interval = recurring ? 1 + (index % 2) : undefined;
+  const cronExpression = recurring ? `${index % 2 === 0 ? '0' : '30'} ${8 + (index % 4) * 2}-18 * * 1-5` : undefined;
 
   return {
     id: makeId(),
     taskId,
     mode,
     time,
-    endTime,
-    interval,
-    frequency,
+    cronExpression,
     date,
-    nextRunAt: calculateNextRunAt({ mode, time, endTime, interval, frequency, date }),
+    nextRunAt: calculateNextRunAt({ mode, time, cronExpression, date }),
     status: scheduleStatuses[index % scheduleStatuses.length],
   };
 };
@@ -62,17 +56,13 @@ export const seedTasks = (): Task[] => {
   const recurringSchedule: Schedule = {
     id: recurringScheduleId,
     taskId: recurringTaskId,
-    mode: 'RECURRING',
-    time: '09:00',
-    endTime: '18:00',
-    interval: 1,
-    frequency: 'HOURLY',
+    mode: 'CRON',
+    time: '00:00',
+    cronExpression: '0 9-18 * * 1-5',
     nextRunAt: calculateNextRunAt({
-      mode: 'RECURRING',
-      time: '09:00',
-      endTime: '18:00',
-      interval: 1,
-      frequency: 'HOURLY',
+      mode: 'CRON',
+      time: '00:00',
+      cronExpression: '0 9-18 * * 1-5',
     }),
     status: 'SCHEDULED',
   };

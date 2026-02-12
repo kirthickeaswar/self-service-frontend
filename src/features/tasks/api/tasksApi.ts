@@ -6,15 +6,18 @@ import {
   Task,
   TaskFilters,
   TaskStatus,
+  TaskTypeDefinition,
   UpdateScheduleInput,
   UpdateTaskInput,
 } from '@/types/domain';
 import { apiServer } from '@/mocks/server';
 
 export const tasksApi = {
-  taskTypes: (): Promise<string[]> => apiServer.getTaskTypes(),
-  addTaskType: (type: string): Promise<string[]> => apiServer.addTaskType(type),
-  deleteTaskType: (type: string): Promise<string[]> => apiServer.deleteTaskType(type),
+  taskTypes: (): Promise<TaskTypeDefinition[]> => apiServer.getTaskTypes(),
+  addTaskType: (payload: TaskTypeDefinition): Promise<TaskTypeDefinition[]> => apiServer.addTaskType(payload),
+  updateTaskType: (currentName: string, payload: TaskTypeDefinition): Promise<TaskTypeDefinition[]> =>
+    apiServer.updateTaskType(currentName, payload),
+  deleteTaskType: (type: string): Promise<TaskTypeDefinition[]> => apiServer.deleteTaskType(type),
   list: (filters?: TaskFilters): Promise<Task[]> => apiServer.getTasks(filters),
   getById: (taskId: number): Promise<Task> => apiServer.getTask(taskId),
   create: (payload: CreateTaskInput): Promise<Task> => apiServer.createTask(payload),

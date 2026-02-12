@@ -37,15 +37,16 @@ import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { ScheduleForm } from '@/features/tasks/components/ScheduleForm';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
-import { formatRecurringRule, formatTimeDisplay } from '@/features/tasks/utils/schedule';
+import {
+  formatDateDisplay,
+  formatTimeDisplay,
+} from '@/features/tasks/utils/schedule';
 import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
 
 const defaultSchedule: CreateScheduleInput = {
-  mode: 'RECURRING',
-  time: '10:00',
-  endTime: '18:00',
-  interval: 1,
-  frequency: 'DAILY',
+  mode: 'CRON',
+  time: '00:00',
+  cronExpression: '0 * * * *',
 };
 
 export const ClientTaskDetailsPage = () => {
@@ -163,11 +164,9 @@ export const ClientTaskDetailsPage = () => {
   const openScheduleEdit = (schedule: Schedule) => {
     setScheduleToEdit(schedule);
     setEditScheduleInput({
-      mode: schedule.mode,
+      mode: schedule.mode === 'RECURRING' ? 'CRON' : schedule.mode,
       time: schedule.time,
-      endTime: schedule.endTime,
-      interval: schedule.interval,
-      frequency: schedule.frequency,
+      cronExpression: schedule.mode === 'CRON' ? schedule.cronExpression : '0 * * * *',
       date: schedule.date,
     });
   };
@@ -298,16 +297,16 @@ export const ClientTaskDetailsPage = () => {
               <TableBody>
                 {task.schedules.map((schedule) => (
                   <TableRow key={schedule.id} hover>
-                    <TableCell>{schedule.mode}</TableCell>
+                    <TableCell>{schedule.mode === 'CRON' || schedule.mode === 'RECURRING' ? 'RECURRING' : 'NON_RECURRING'}</TableCell>
                     <TableCell>
-                      {schedule.mode === 'RECURRING' && (schedule.frequency === 'MINUTELY' || schedule.frequency === 'HOURLY') && schedule.endTime
-                        ? `${formatTimeDisplay(schedule.time)} - ${formatTimeDisplay(schedule.endTime ?? schedule.time)}`
+                      {schedule.mode === 'CRON' || schedule.mode === 'RECURRING'
+                        ? 'From expression'
                         : formatTimeDisplay(schedule.time)}
                     </TableCell>
                     <TableCell>
-                      {schedule.mode === 'RECURRING'
-                        ? formatRecurringRule(schedule.frequency, schedule.interval, schedule.endTime)
-                        : new Date(schedule.date ?? '').toLocaleDateString()}
+                      {schedule.mode === 'CRON' || schedule.mode === 'RECURRING'
+                        ? schedule.cronExpression ?? 'N/A'
+                        : formatDateDisplay(schedule.date)}
                     </TableCell>
                     <TableCell>{schedule.mode === 'NON_RECURRING' ? 'N/A' : new Date(schedule.nextRunAt).toLocaleString()}</TableCell>
                     <TableCell>

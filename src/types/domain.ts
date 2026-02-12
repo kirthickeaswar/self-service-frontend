@@ -1,7 +1,7 @@
 export type TaskType = string;
 export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED';
 
-export type ScheduleMode = 'RECURRING' | 'NON_RECURRING';
+export type ScheduleMode = 'RECURRING' | 'NON_RECURRING' | 'CRON';
 export type RecurringFrequency = 'MINUTELY' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
 export type ScheduleStatus = 'SCHEDULED' | 'PAUSED' | 'COMPLETED' | 'FAILED';
@@ -14,6 +14,12 @@ export interface Schedule {
   taskId: number;
   mode: ScheduleMode;
   time: string;
+  cronExpression?: string;
+  startDate?: string;
+  endDate?: string;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  monthOfYear?: number;
   endTime?: string;
   interval?: number;
   frequency?: RecurringFrequency;
@@ -48,6 +54,11 @@ export interface LogEntry {
 
 export type Role = 'CLIENT' | 'ADMIN';
 
+export interface TaskTypeDefinition {
+  name: TaskType;
+  batchFilePath: string;
+}
+
 export interface TaskFilters {
   search?: string;
   type?: TaskType | 'ALL';
@@ -67,6 +78,12 @@ export interface LogFilters {
 export interface CreateScheduleInput {
   mode: ScheduleMode;
   time: string;
+  cronExpression?: string;
+  startDate?: string;
+  endDate?: string;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  monthOfYear?: number;
   endTime?: string;
   interval?: number;
   frequency?: RecurringFrequency;
@@ -92,6 +109,12 @@ export interface UpdateTaskInput {
 export interface UpdateScheduleInput {
   mode: ScheduleMode;
   time: string;
+  cronExpression?: string;
+  startDate?: string;
+  endDate?: string;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  monthOfYear?: number;
   endTime?: string;
   interval?: number;
   frequency?: RecurringFrequency;

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
+import { TaskTypeDefinition } from '@/types/domain';
 
 export const useTaskTypes = () => {
-  const [taskTypes, setTaskTypes] = useState<string[]>([]);
+  const [taskTypeDefinitions, setTaskTypeDefinitions] = useState<TaskTypeDefinition[]>([]);
   const [loadingTaskTypes, setLoadingTaskTypes] = useState(true);
   const [taskTypesError, setTaskTypesError] = useState<string | null>(null);
 
@@ -11,7 +12,7 @@ export const useTaskTypes = () => {
     setTaskTypesError(null);
     try {
       const types = await tasksApi.taskTypes();
-      setTaskTypes(types);
+      setTaskTypeDefinitions(types);
     } catch (err) {
       setTaskTypesError(err instanceof Error ? err.message : 'Unable to load task types');
     } finally {
@@ -24,7 +25,8 @@ export const useTaskTypes = () => {
   }, []);
 
   return {
-    taskTypes,
+    taskTypes: taskTypeDefinitions.map((item) => item.name),
+    taskTypeDefinitions,
     loadingTaskTypes,
     taskTypesError,
     reloadTaskTypes: loadTaskTypes,

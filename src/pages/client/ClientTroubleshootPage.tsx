@@ -1,0 +1,184 @@
+import SearchIcon from '@mui/icons-material/Search';
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  MenuItem,
+  Skeleton,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import Grid from '@mui/material/Grid';
+import { useEffect, useMemo, useState } from 'react';
+import { EmptyState } from '@/components/common/EmptyState';
+import { PageHeader } from '@/components/common/PageHeader';
+import { useSnackbar } from '@/app/SnackbarContext';
+import { logsApi } from '@/features/logs/api/logsApi';
+import { LogsTable } from '@/features/logs/components/LogsTable';
+import { tasksApi } from '@/features/tasks/api/tasksApi';
+import { LogEntry, LogLevel, Task } from '@/types/domain';
+
+const clientOwner = 'alice@mock.com';
+
+export const ClientTroubleshootPage = () => {
+  const { showToast } = useSnackbar();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | ''>('');
+  const [selectedScheduleId, setSelectedScheduleId] = useState<number | ''>('');
+  const [level, setLevel] = useState<LogLevel | 'ALL'>('ALL');
+  const [search, setSearch] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [initLoading, setInitLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedTask = useMemo(() => tasks.find((task) => task.id === selectedTaskId), [tasks, selectedTaskId]);
+
+  useEffect(() => {
+    const init = async () => {
+      setInitLoading(true);
+      try {
+        const items = await tasksApi.list({ owner: clientOwner });
+        setTasks(items);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load tasks');
+      } finally {
+        setInitLoading(false);
+      }
+    };
+
+    void init();
+  }, []);
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await logsApi.list({
+        taskId: selectedTaskId || undefined,
+        scheduleId: selectedScheduleId || undefined,
+        level,
+        search,
+        from: from ? new Date(from).toISOString() : undefined,
+        to: to ? new Date(to).toISOString() : undefined,
+      });
+      setLogs(data);
+      showToast(`Fetched ${data.length} logs`, 'success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Log fetch failed');
+      showToast('Unable to fetch logs', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Stack spacing={3}>
+      <PageHeader title="Troubleshoot" subtitle="Fetch and inspect task/schedule logs." />
+
+      {error ? <Alert severity="error">{error}</Alert> : null}
+
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Card>
+            <CardContent>
+              <Stack spacing={2}>
+                <Typography variant="h6">Log Scope</Typography>
+                {initLoading ? (
+                  <Skeleton height={180} />
+                ) : (
+                  <>
+                    <TextField
+                      select
+                      label="Task"
+                      value={selectedTaskId}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setSelectedTaskId(value === '' ? '' : Number(value));
+                        setSelectedScheduleId('');
+                      }}
+                    >
+                      <MenuItem value="">All Tasks</MenuItem>
+                      {tasks.map((task) => (
+                        <MenuItem key={task.id} value={task.id}>
+                          {task.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField
+                      select
+                      label="Schedule"
+                      value={selectedScheduleId}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setSelectedScheduleId(value === '' ? '' : Number(value));
+                      }}
+                      disabled={!selectedTask}
+                    >
+                      <MenuItem value="">All Schedules</MenuItem>
+                      {selectedTask?.schedules.map((schedule) => (
+                        <MenuItem key={schedule.id} value={schedule.id}>
+                          {schedule.id}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField select label="Level" value={level} onChange={(event) => setLevel(event.target.value as LogLevel | 'ALL')}>
+                      <MenuItem value="ALL">All</MenuItem>
+                      <MenuItem value="INFO">INFO</MenuItem>
+                      <MenuItem value="WARN">WARN</MenuItem>
+                      <MenuItem value="ERROR">ERROR</MenuItem>
+                    </TextField>
+
+                    <TextField label="Search logs" value={search} onChange={(event) => setSearch(event.target.value)} />
+                    <TextField
+                      label="From"
+                      type="date"
+                      value={from}
+                      onChange={(event) => setFrom(event.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      label="To"
+                      type="date"
+                      value={to}
+                      onChange={(event) => setTo(event.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <Button variant="contained" startIcon={<SearchIcon />} onClick={() => void fetchLogs()} disabled={loading}>
+                      Fetch Logs
+                    </Button>
+                  </>
+                )}
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="h6">Logs Viewer</Typography>
+            {loading ? (
+              <Card>
+                <CardContent>
+                  <Skeleton height={36} />
+                  <Skeleton height={36} />
+                  <Skeleton height={36} />
+                </CardContent>
+              </Card>
+            ) : logs.length === 0 ? (
+              <EmptyState title="No logs found" subtitle="Choose filters and fetch logs to inspect run details." />
+            ) : (
+              <LogsTable logs={logs} />
+            )}
+          </Stack>
+        </Grid>
+      </Grid>
+    </Stack>
+  );
+};

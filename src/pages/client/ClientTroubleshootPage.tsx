@@ -19,10 +19,12 @@ import { logsApi } from '@/features/logs/api/logsApi';
 import { LogsTable } from '@/features/logs/components/LogsTable';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { LogEntry, LogLevel, Task } from '@/types/domain';
+import { useSearchParams } from 'react-router-dom';
 
 const clientOwner = 'alice@mock.com';
 
 export const ClientTroubleshootPage = () => {
+  const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<number | ''>('');
@@ -44,6 +46,13 @@ export const ClientTroubleshootPage = () => {
       try {
         const items = await tasksApi.list({ owner: clientOwner });
         setTasks(items);
+        const presetTaskId = searchParams.get('taskId');
+        if (presetTaskId) {
+          const parsed = Number(presetTaskId);
+          if (!Number.isNaN(parsed)) {
+            setSelectedTaskId(parsed);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load tasks');
       } finally {
@@ -52,7 +61,7 @@ export const ClientTroubleshootPage = () => {
     };
 
     void init();
-  }, []);
+  }, [searchParams]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -76,9 +85,15 @@ export const ClientTroubleshootPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (!initLoading && selectedTaskId !== '') {
+      void fetchLogs();
+    }
+  }, [initLoading, selectedTaskId]);
+
   return (
     <Stack spacing={3}>
-      <PageHeader title="Troubleshoot" subtitle="Fetch and inspect task/schedule logs." />
+      <PageHeader title="Logs" subtitle="Fetch and inspect task/schedule logs." />
 
       {error ? <Alert severity="error">{error}</Alert> : null}
 

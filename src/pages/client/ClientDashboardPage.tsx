@@ -1,5 +1,5 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import BugReportIcon from '@mui/icons-material/BugReport';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { Alert, Button, Card, CardContent, List, ListItem, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useMemo, useState } from 'react';
@@ -96,8 +96,8 @@ export const ClientDashboardPage = () => {
             <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => navigate('/client/create-task')}>
               Create Task
             </Button>
-            <Button startIcon={<BugReportIcon />} variant="outlined" onClick={() => navigate('/client/troubleshoot')}>
-              Troubleshoot
+            <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/client/logs')}>
+              Logs
             </Button>
           </Stack>
         </CardContent>

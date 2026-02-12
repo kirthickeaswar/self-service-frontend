@@ -66,6 +66,7 @@ export const router = createBrowserRouter([
       { path: 'tasks', element: <ClientTasksPage /> },
       { path: 'tasks/:taskId', element: <ClientTaskDetailsPage /> },
       { path: 'create-task', element: <ClientCreateTaskPage /> },
+      { path: 'logs', element: <ClientTroubleshootPage /> },
       { path: 'troubleshoot', element: <ClientTroubleshootPage /> },
     ],
   },

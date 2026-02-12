@@ -1,7 +1,7 @@
 import { Alert, Button, Card, CardContent, Checkbox, FormControlLabel, MenuItem, Stack, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { CreateScheduleInput, CreateTaskInput, TaskType } from '@/types/domain';
-import { ensureOwnerInAccess, parseAccessEmails } from '@/features/tasks/utils/access';
+import { parseAccessEmails } from '@/features/tasks/utils/access';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { ScheduleForm } from './ScheduleForm';
 
@@ -23,7 +23,7 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
   const { taskTypes } = useTaskTypes();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [additionalAccessEmails, setAdditionalAccessEmails] = useState('');
+  const [emailList, setEmailList] = useState('');
   const [type, setType] = useState<TaskType>('');
   const [includeSchedule, setIncludeSchedule] = useState(false);
   const [schedule, setSchedule] = useState<CreateScheduleInput>(defaultSchedule);
@@ -46,7 +46,7 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
       await onSubmit({
         name: name.trim(),
         description: description.trim(),
-        accessEmails: ensureOwnerInAccess(owner, parseAccessEmails(additionalAccessEmails)),
+        accessEmails: parseAccessEmails(emailList),
         type,
         owner,
         schedule: includeSchedule ? schedule : undefined,
@@ -54,7 +54,7 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
 
       setName('');
       setDescription('');
-      setAdditionalAccessEmails('');
+      setEmailList('');
       setType(taskTypes[0] ?? '');
       setIncludeSchedule(false);
       setSchedule(defaultSchedule);
@@ -78,15 +78,10 @@ export const TaskForm = ({ owner, submitting, onSubmit }: TaskFormProps) => {
             minRows={3}
           />
           <TextField
-            label="Owner (always included)"
-            value={owner}
-            disabled
-          />
-          <TextField
-            label="Additional Access Emails (comma separated)"
-            value={additionalAccessEmails}
-            onChange={(event) => setAdditionalAccessEmails(event.target.value)}
-            helperText="Add distribution list members. Owner cannot be removed."
+            label="Email List (comma separated)"
+            value={emailList}
+            onChange={(event) => setEmailList(event.target.value)}
+            helperText="Add emails that should have access to this task."
           />
           <TextField select label="Task Type" value={type} onChange={(event) => setType(event.target.value as TaskType)}>
             {taskTypes.map((taskType) => (

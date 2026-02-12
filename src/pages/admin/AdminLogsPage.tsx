@@ -2,6 +2,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import { Alert, Button, Card, CardContent, MenuItem, Skeleton, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -11,6 +12,7 @@ import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { LogEntry, LogLevel, Task } from '@/types/domain';
 
 export const AdminLogsPage = () => {
+  const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskId, setTaskId] = useState<number | ''>('');
@@ -28,7 +30,15 @@ export const AdminLogsPage = () => {
     const init = async () => {
       try {
         setInitLoading(true);
-        setTasks(await tasksApi.list());
+        const allTasks = await tasksApi.list();
+        setTasks(allTasks);
+        const presetTaskId = searchParams.get('taskId');
+        if (presetTaskId) {
+          const parsed = Number(presetTaskId);
+          if (!Number.isNaN(parsed)) {
+            setTaskId(parsed);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load tasks');
       } finally {
@@ -37,7 +47,7 @@ export const AdminLogsPage = () => {
     };
 
     void init();
-  }, []);
+  }, [searchParams]);
 
   const selectedTask = tasks.find((task) => task.id === taskId);
 
@@ -62,6 +72,12 @@ export const AdminLogsPage = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!initLoading && taskId !== '') {
+      void fetchLogs();
+    }
+  }, [initLoading, taskId]);
 
   return (
     <Stack spacing={3}>

@@ -204,6 +204,7 @@ export const AdminTasksPage = () => {
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/admin/tasks/${task.id}`)}
+          onViewHistory={(task) => navigate(`/admin/logs?taskId=${task.id}`)}
           onTogglePause={(task) => void toggleStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}
         />

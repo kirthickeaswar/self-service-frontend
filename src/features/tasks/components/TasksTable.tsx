@@ -3,6 +3,7 @@ import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import HistoryIcon from '@mui/icons-material/History';
 import { IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import { DataTable } from '@/components/common/DataTable';
@@ -15,6 +16,7 @@ interface TasksTableProps {
   previousRunsByTask: Record<number, string | undefined>;
   nextRunsByTask: Record<number, string | undefined>;
   onView: (task: Task) => void;
+  onViewHistory: (task: Task) => void;
   onTogglePause: (task: Task) => void;
   onDelete: (task: Task) => void;
 }
@@ -27,6 +29,7 @@ export const TasksTable = ({
   previousRunsByTask,
   nextRunsByTask,
   onView,
+  onViewHistory,
   onTogglePause,
   onDelete,
 }: TasksTableProps) => {
@@ -107,6 +110,16 @@ export const TasksTable = ({
           }}
         >
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> View Details
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (selectedTask) {
+              onViewHistory(selectedTask);
+            }
+            setAnchorEl(null);
+          }}
+        >
+          <HistoryIcon fontSize="small" sx={{ mr: 1 }} /> View History
         </MenuItem>
         <MenuItem
           disabled={selectedTask?.status === 'NOT_SCHEDULED'}

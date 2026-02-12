@@ -11,7 +11,6 @@ import {
   UpdateScheduleInput,
   UpdateTaskInput,
 } from '@/types/domain';
-import { ensureOwnerInAccess } from '@/features/tasks/utils/access';
 import { calculateNextRunAt } from '@/features/tasks/utils/schedule';
 import { mockDb } from './db';
 
@@ -182,7 +181,7 @@ export const apiServer = {
         id: taskId,
         name: input.name,
         description: input.description,
-        accessEmails: ensureOwnerInAccess(input.owner, input.accessEmails),
+        accessEmails: [...new Set(input.accessEmails.map((email) => email.trim().toLowerCase()).filter(Boolean))],
         type: input.type,
         owner: input.owner,
         status: schedules.length > 0 ? 'ACTIVE' : 'NOT_SCHEDULED',
@@ -219,7 +218,7 @@ export const apiServer = {
 
       task.name = input.name;
       task.description = input.description;
-      task.accessEmails = ensureOwnerInAccess(task.owner, input.accessEmails);
+      task.accessEmails = [...new Set(input.accessEmails.map((email) => email.trim().toLowerCase()).filter(Boolean))];
       task.type = input.type;
       task.updatedAt = new Date().toISOString();
 

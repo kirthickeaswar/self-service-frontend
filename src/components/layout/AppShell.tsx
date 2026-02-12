@@ -1,10 +1,9 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import TroubleshootIcon from '@mui/icons-material/Troubleshoot';
+import DescriptionIcon from '@mui/icons-material/Description';
 import AddTaskIcon from '@mui/icons-material/AddTask';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import DescriptionIcon from '@mui/icons-material/Description';
 import CategoryIcon from '@mui/icons-material/Category';
 import {
   AppBar,
@@ -37,7 +36,7 @@ const clientLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/client/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/client/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/client/create-task', icon: <AddTaskIcon fontSize="small" /> },
-  { label: 'Troubleshoot', path: '/client/troubleshoot', icon: <TroubleshootIcon fontSize="small" /> },
+  { label: 'Logs', path: '/client/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 
 const adminLinks: MenuLink[] = [

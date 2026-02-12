@@ -36,7 +36,7 @@ import { useSnackbar } from '@/app/SnackbarContext';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { ScheduleForm } from '@/features/tasks/components/ScheduleForm';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
-import { ensureOwnerInAccess, parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
+import { parseAccessEmails, stringifyAccessEmails } from '@/features/tasks/utils/access';
 import { formatRecurringRule, formatTimeDisplay } from '@/features/tasks/utils/schedule';
 import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
 
@@ -145,7 +145,7 @@ export const ClientTaskDetailsPage = () => {
   const saveTaskEdit = async () => {
     if (Number.isNaN(taskIdNumber)) return;
     try {
-      const accessEmails = ensureOwnerInAccess(task?.owner ?? '', parseAccessEmails(taskAdditionalAccessEmails));
+      const accessEmails = parseAccessEmails(taskAdditionalAccessEmails);
       await tasksApi.update(taskIdNumber, {
         name: taskName.trim(),
         description: taskDescription.trim(),
@@ -248,13 +248,13 @@ export const ClientTaskDetailsPage = () => {
             </Grid>
             <Grid size={{ xs: 12, md: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Owner
+                Created By
               </Typography>
               <Typography variant="subtitle2">{task.owner}</Typography>
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary">
-                Access Emails
+                Email List
               </Typography>
               <Typography variant="subtitle2">{task.accessEmails.join(', ')}</Typography>
             </Grid>
@@ -374,15 +374,10 @@ export const ClientTaskDetailsPage = () => {
               minRows={3}
             />
             <TextField
-              label="Owner (always included)"
-              value={task.owner}
-              disabled
-            />
-            <TextField
-              label="Additional Access Emails (comma separated)"
+              label="Email List (comma separated)"
               value={taskAdditionalAccessEmails}
               onChange={(event) => setTaskAdditionalAccessEmails(event.target.value)}
-              helperText="Add distribution list members. Owner cannot be removed."
+              helperText="Add emails that should have access to this task."
             />
             <TextField select label="Task Type" value={taskType} onChange={(event) => setTaskType(event.target.value as TaskType)}>
               {[...new Set([...taskTypes, taskType])].map((typeOption) => (

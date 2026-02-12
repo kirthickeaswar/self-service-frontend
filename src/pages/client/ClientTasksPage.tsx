@@ -183,6 +183,7 @@ export const ClientTasksPage = () => {
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/client/tasks/${task.id}`)}
+          onViewHistory={(task) => navigate(`/client/logs?taskId=${task.id}`)}
           onTogglePause={(task) => void toggleTaskStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}
         />

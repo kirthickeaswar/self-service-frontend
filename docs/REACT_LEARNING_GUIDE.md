@@ -30,8 +30,8 @@ Start here:
   - Actual screens users interact with.
 - `src/features/*`
   - Business logic split by domain (tasks, logs).
-- `src/mocks/*`
-  - Fake backend for Week-1.
+- `src/features/api/httpClient.ts`
+  - Shared HTTP client for backend requests.
 
 ---
 
@@ -132,8 +132,7 @@ File:
 Why this exists:
 
 - UI should not know if data comes from:
-  - mock server
-  - real backend
+  - any backend implementation
 - UI always calls `tasksApi.*` or `logsApi.*`.
 
 This is what makes backend replacement easy.
@@ -233,21 +232,15 @@ Tips:
 
 ---
 
-## 12) Mock Backend (How It Works)
+## 12) Backend API Layer (How It Works)
 
 Files:
 
-- `src/mocks/db.ts` -> in-memory data
-- `src/mocks/seed.ts` -> seed records
-- `src/mocks/server.ts` -> API behavior
+- `src/features/api/httpClient.ts` -> shared fetch wrapper + error handling
+- `src/features/tasks/api/tasksApi.ts` -> tasks/task-types/users/auth API mapping
+- `src/features/logs/api/logsApi.ts` -> logs API mapping
 
-It simulates:
-
-- latency
-- occasional failures
-- CRUD operations
-
-Great for frontend development before backend is ready.
+This keeps backend communication centralized and pages/components clean.
 
 ---
 
@@ -256,7 +249,7 @@ Great for frontend development before backend is ready.
 Example: “Task Export” button
 
 1. Add API method in `tasksApi.ts`.
-2. Implement mock behavior in `mocks/server.ts`.
+2. Implement backend call and response mapping in API layer.
 3. Add button in relevant page/component.
 4. Add loading/success/error handling.
 5. Add route if it needs new page.
@@ -294,7 +287,7 @@ Use this order:
 5. Read one CRUD page (`ClientTasksPage.tsx`)
 6. Read one form component (`TaskForm.tsx`)
 7. Read API layer (`tasksApi.ts`)
-8. Read mock backend (`mocks/server.ts`)
+8. Read shared HTTP layer (`httpClient.ts`)
 
 At each step, run app and click same feature in browser.
 
@@ -328,4 +321,3 @@ npm run build
   - utils
   - components
   - role guards
-

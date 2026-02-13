@@ -61,8 +61,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
-  isAdmin: boolean;
-  userLevel: 0 | 1;
+  userLevel: 0 | 1 | 2;
   role: Role;
   createdAt?: string;
 }

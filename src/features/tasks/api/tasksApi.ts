@@ -21,8 +21,7 @@ interface BackendUser {
   id: number;
   name: string;
   email: string;
-  isAdmin: boolean;
-  userLevel: 0 | 1;
+  userLevel: 0 | 1 | 2;
   createdAt?: string;
 }
 
@@ -57,9 +56,10 @@ interface BackendSchedule {
   createdAt?: string;
 }
 
-const toRole = (isAdmin: boolean, userLevel: number): Role => {
-  if (isAdmin) return 'ADMIN';
-  return userLevel === 1 ? 'EDITOR' : 'VIEWER';
+const toRole = (userLevel: number): Role => {
+  if (userLevel === 2) return 'ADMIN';
+  if (userLevel === 1) return 'EDITOR';
+  return 'VIEWER';
 };
 
 const toTaskStatus = (status: BackendTaskStatus): TaskStatus => {
@@ -339,11 +339,11 @@ export const tasksApi = {
   },
 
   login: async (email: string, password: string): Promise<{ id: number; username: string; role: Role }> => {
-    const response = await httpClient.post<{ id: number; name: string; email: string; isAdmin: boolean; userLevel: 0 | 1 }>(
-      '/auth/login',
-      { email, password },
-    );
-    return { id: response.id, username: response.email || response.name, role: toRole(response.isAdmin, response.userLevel) };
+    const response = await httpClient.post<{ id: number; name: string; email: string; userLevel: 0 | 1 | 2 }>('/auth/login', {
+      email,
+      password,
+    });
+    return { id: response.id, username: response.email || response.name, role: toRole(response.userLevel) };
   },
 
   users: async (): Promise<User[]> => {
@@ -352,21 +352,18 @@ export const tasksApi = {
       id: item.id,
       name: item.name,
       email: item.email,
-      isAdmin: item.isAdmin,
       userLevel: item.userLevel,
-      role: toRole(item.isAdmin, item.userLevel),
+      role: toRole(item.userLevel),
       createdAt: item.createdAt,
     }));
   },
 
   createUser: async (payload: { name: string; email: string; password: string; role: Role }): Promise<User[]> => {
-    const isAdmin = payload.role === 'ADMIN';
-    const userLevel: 0 | 1 = isAdmin ? 1 : payload.role === 'EDITOR' ? 1 : 0;
+    const userLevel: 0 | 1 | 2 = payload.role === 'ADMIN' ? 2 : payload.role === 'EDITOR' ? 1 : 0;
     await httpClient.post<number>('/users', {
       name: payload.name,
       email: payload.email,
       password: payload.password,
-      isAdmin,
       userLevel,
     });
     return tasksApi.users();

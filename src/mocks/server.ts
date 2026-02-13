@@ -110,14 +110,14 @@ const withMock = <T>(resolver: () => T, failureRate = 0): Promise<T> => {
 };
 
 export const apiServer = {
-  login(username: string, password: string) {
+  login(email: string, password: string) {
     return withMock(() => {
-      const normalized = username.trim().toLowerCase();
-      const user = mockDb.users.find((item) => item.username.toLowerCase() === normalized);
+      const normalized = email.trim().toLowerCase();
+      const user = mockDb.users.find((item) => item.email.toLowerCase() === normalized);
       if (!user || user.password !== password) {
-        throw new Error('Invalid username or password');
+        throw new Error('Invalid email or password');
       }
-      return { id: user.id, username: user.username, role: user.role };
+      return { id: user.id, username: user.email, role: user.role };
     }, readFailureRate);
   },
 
@@ -125,17 +125,26 @@ export const apiServer = {
     return withMock(() => mockDb.users.map((user) => ({ ...user })), readFailureRate);
   },
 
-  createUser(payload: Pick<User, 'username' | 'password' | 'role'>) {
+  createUser(payload: Pick<User, 'name' | 'email' | 'password' | 'role' | 'isAdmin' | 'userLevel'>) {
     return withMock(() => {
-      const username = payload.username.trim();
-      const password = payload.password.trim();
-      if (!username || !password) {
-        throw new Error('Username and password are required');
+      const name = payload.name.trim();
+      const email = payload.email.trim().toLowerCase();
+      const password = (payload.password ?? '').trim();
+      if (!name || !email || !password) {
+        throw new Error('Name, email, and password are required');
       }
-      if (mockDb.users.some((user) => user.username.toLowerCase() === username.toLowerCase())) {
-        throw new Error('Username already exists');
+      if (mockDb.users.some((user) => user.email.toLowerCase() === email)) {
+        throw new Error('Email already exists');
       }
-      const user: User = { id: id(), username, password, role: payload.role };
+      const user: User = {
+        id: id(),
+        name,
+        email,
+        password,
+        role: payload.role,
+        isAdmin: payload.isAdmin,
+        userLevel: payload.userLevel,
+      };
       mockDb.users.push(user);
       return mockDb.users.map((item) => ({ ...item }));
     }, writeFailureRate);

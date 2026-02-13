@@ -1,11 +1,10 @@
 export type TaskType = string;
-export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED';
+export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED' | 'DELETED';
 
 export type ScheduleMode = 'RECURRING' | 'NON_RECURRING' | 'CRON';
 export type RecurringFrequency = 'MINUTELY' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
-export type ScheduleStatus = 'SCHEDULED' | 'PAUSED' | 'COMPLETED' | 'FAILED';
-
+export type ScheduleStatus = 'SCHEDULED' | 'PAUSED' | 'COMPLETED' | 'FAILED' | 'DELETED';
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export type LogSource = 'BATCH' | 'SYSTEM';
 
@@ -43,25 +42,33 @@ export interface Task {
 
 export interface LogEntry {
   id: number;
+  userId?: number;
   taskId: number;
   scheduleId?: number;
   timestamp: string;
-  level: LogLevel;
-  message: string;
+  action?: string;
+  body?: string;
+  level?: LogLevel;
+  message?: string;
   details?: string;
-  source: LogSource;
+  source?: LogSource;
 }
 
 export type Role = 'ADMIN' | 'EDITOR' | 'VIEWER';
 
 export interface User {
   id: number;
-  username: string;
-  password: string;
+  name: string;
+  email: string;
+  password?: string;
+  isAdmin: boolean;
+  userLevel: 0 | 1;
   role: Role;
+  createdAt?: string;
 }
 
 export interface TaskTypeDefinition {
+  id?: number;
   name: TaskType;
   batchFilePath: string;
 }

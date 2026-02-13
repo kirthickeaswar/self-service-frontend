@@ -5,6 +5,7 @@ const palette: Record<string, 'success' | 'warning' | 'error' | 'default' | 'inf
   PAUSED: 'warning',
   ERROR: 'error',
   NOT_SCHEDULED: 'default',
+  DELETED: 'default',
   SCHEDULED: 'info',
   COMPLETED: 'success',
   FAILED: 'error',
@@ -12,6 +13,7 @@ const palette: Record<string, 'success' | 'warning' | 'error' | 'default' | 'inf
 
 const labelMap: Record<string, string> = {
   NOT_SCHEDULED: 'Not Scheduled',
+  DELETED: 'Deleted',
 };
 
 export const StatusChip = ({ status }: { status: string }) => {

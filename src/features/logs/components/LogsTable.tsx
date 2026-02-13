@@ -1,12 +1,6 @@
-import { Chip, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Typography } from '@mui/material';
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TablePagination, TableRow, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { LogEntry } from '@/types/domain';
-
-const levelColor: Record<string, 'success' | 'warning' | 'error' | 'default'> = {
-  INFO: 'success',
-  WARN: 'warning',
-  ERROR: 'error',
-};
 
 export const LogsTable = ({ logs }: { logs: LogEntry[] }) => {
   const [page, setPage] = useState(0);
@@ -24,31 +18,26 @@ export const LogsTable = ({ logs }: { logs: LogEntry[] }) => {
           <TableHead>
             <TableRow>
               <TableCell>Timestamp</TableCell>
-              <TableCell>Level</TableCell>
+              <TableCell>User</TableCell>
               <TableCell>Task</TableCell>
-              <TableCell>Schedule</TableCell>
-              <TableCell>Message</TableCell>
-              <TableCell>Source</TableCell>
+              <TableCell>Action</TableCell>
+              <TableCell>Body</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {pagedLogs.map((log) => (
               <TableRow key={log.id} hover>
                 <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                <TableCell>
-                  <Chip size="small" label={log.level} color={levelColor[log.level] ?? 'default'} />
-                </TableCell>
+                <TableCell>{log.userId}</TableCell>
                 <TableCell>{log.taskId}</TableCell>
-                <TableCell>{log.scheduleId ?? '-'}</TableCell>
                 <TableCell>
-                  <Typography variant="body2">{log.message}</Typography>
-                  {log.details ? (
-                    <Typography variant="caption" color="text.secondary">
-                      {log.details}
-                    </Typography>
-                  ) : null}
+                  <Typography variant="body2">{log.action ?? log.message ?? '-'}</Typography>
                 </TableCell>
-                <TableCell>{log.source}</TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                    {log.body ?? log.details ?? '-'}
+                  </Typography>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

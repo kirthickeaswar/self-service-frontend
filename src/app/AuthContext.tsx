@@ -12,7 +12,7 @@ interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -39,8 +39,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       user,
       loading,
-      login: async (username: string, password: string) => {
-        const loggedIn = await tasksApi.login(username, password);
+      login: async (email: string, password: string) => {
+        const loggedIn = await tasksApi.login(email, password);
         setUser(loggedIn);
         localStorage.setItem(storageKey, JSON.stringify(loggedIn));
       },

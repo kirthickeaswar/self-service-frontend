@@ -20,10 +20,10 @@ class MockDb {
       { name: 'T4', batchFilePath: '/batch/t4.bat' },
     ];
     this.users = [
-      { id: 1, username: 'admin', password: 'admin123', role: 'ADMIN' },
-      { id: 2, username: 'editor', password: 'editor123', role: 'EDITOR' },
-      { id: 3, username: 'viewer', password: 'viewer123', role: 'VIEWER' },
-      { id: 4, username: 'alice', password: 'alice123', role: 'EDITOR' },
+      { id: 1, name: 'Admin', email: 'admin@example.com', password: 'admin123', isAdmin: true, userLevel: 1, role: 'ADMIN' },
+      { id: 2, name: 'Editor', email: 'editor@example.com', password: 'editor123', isAdmin: false, userLevel: 1, role: 'EDITOR' },
+      { id: 3, name: 'Viewer', email: 'viewer@example.com', password: 'viewer123', isAdmin: false, userLevel: 0, role: 'VIEWER' },
+      { id: 4, name: 'Alice', email: 'alice@example.com', password: 'alice123', isAdmin: false, userLevel: 1, role: 'EDITOR' },
     ];
   }
 

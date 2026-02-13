@@ -6,7 +6,7 @@ import { useAuth } from '@/app/AuthContext';
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { user, login } = useAuth();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -20,7 +20,7 @@ export const LoginPage = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await login(username, password);
+      await login(email, password);
       navigate('/redirect', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -37,11 +37,11 @@ export const LoginPage = () => {
             <Stack spacing={0.5}>
               <Typography variant="h5">Spectrum Login</Typography>
               <Typography variant="body2" color="text.secondary">
-                Sign in with username and password.
+                Sign in with email and password.
               </Typography>
             </Stack>
             {error ? <Alert severity="error">{error}</Alert> : null}
-            <TextField label="Username" value={username} onChange={(event) => setUsername(event.target.value)} required />
+            <TextField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
             <TextField
               label="Password"
               type="password"

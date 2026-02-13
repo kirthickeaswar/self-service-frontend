@@ -32,19 +32,9 @@ export const AdminTasksPage = () => {
 
   const buildPreviousRuns = (taskData: Task[], logs: LogEntry[]) => {
     const result: Record<number, string | undefined> = {};
-    const now = new Date();
     taskData.forEach((task) => {
       const latest = logs
-        .filter((log) => {
-          if (log.taskId !== task.id || !log.scheduleId) {
-            return false;
-          }
-          const schedule = task.schedules.find((item) => item.id === log.scheduleId);
-          if (!schedule) {
-            return false;
-          }
-          return schedule.status === 'COMPLETED' || schedule.status === 'FAILED' || new Date(schedule.nextRunAt) <= now;
-        })
+        .filter((log) => log.taskId === task.id)
         .sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp))[0];
       result[task.id] = latest?.timestamp;
     });
@@ -102,12 +92,8 @@ export const AdminTasksPage = () => {
   }, [createdBy]);
 
   const toggleStatus = async (task: Task) => {
-    if (task.status === 'NOT_SCHEDULED') {
-      showToast('Task is not scheduled yet. Add a schedule first.', 'info');
-      return;
-    }
     try {
-      await tasksApi.updateStatus(task.id, task.status === 'PAUSED' ? 'ACTIVE' : 'PAUSED');
+      await tasksApi.updateStatus(task.id, task.status === 'NOT_SCHEDULED' ? 'ACTIVE' : 'NOT_SCHEDULED');
       showToast('Task status updated', 'success');
       await load();
     } catch (err) {
@@ -166,9 +152,9 @@ export const AdminTasksPage = () => {
               >
                 <MenuItem value="ALL">All</MenuItem>
                 <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-                <MenuItem value="PAUSED">PAUSED</MenuItem>
                 <MenuItem value="ERROR">ERROR</MenuItem>
                 <MenuItem value="NOT_SCHEDULED">NOT SCHEDULED</MenuItem>
+                <MenuItem value="DELETED">DELETED</MenuItem>
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, md: 2.5 }}>

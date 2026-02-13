@@ -15,7 +15,8 @@ export const AdminUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('VIEWER');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
@@ -39,24 +40,15 @@ export const AdminUsersPage = () => {
 
   const addUser = async () => {
     try {
-      await tasksApi.createUser({ username, password, role });
-      setUsername('');
+      await tasksApi.createUser({ name, email, password, role });
+      setName('');
+      setEmail('');
       setPassword('');
       setRole('VIEWER');
       await load();
       showToast('User created', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to create user', 'error');
-    }
-  };
-
-  const updateRole = async (userId: number, nextRole: Role) => {
-    try {
-      await tasksApi.updateUserRole(userId, nextRole);
-      await load();
-      showToast('User role updated', 'success');
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Unable to update role', 'error');
     }
   };
 
@@ -74,13 +66,14 @@ export const AdminUsersPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Manage Users" subtitle="Create users and assign viewer/editor/admin roles." />
+      <PageHeader title="Manage Users" subtitle="Create or delete users. Role updates are handled by backend for now." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-            <TextField label="Username" value={username} onChange={(event) => setUsername(event.target.value)} />
+            <TextField label="Name" value={name} onChange={(event) => setName(event.target.value)} />
+            <TextField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
             <TextField label="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
             <TextField select label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
               {roleOptions.map((option) => (
@@ -89,7 +82,11 @@ export const AdminUsersPage = () => {
                 </MenuItem>
               ))}
             </TextField>
-            <Button variant="contained" onClick={() => void addUser()} disabled={!username.trim() || !password.trim()}>
+            <Button
+              variant="contained"
+              onClick={() => void addUser()}
+              disabled={!name.trim() || !email.trim() || !password.trim()}
+            >
               Add User
             </Button>
           </Stack>
@@ -105,24 +102,12 @@ export const AdminUsersPage = () => {
             rows={users}
             rowKey={(user) => user.id}
             columns={[
-              { id: 'username', label: 'Username', render: (user: User) => user.username },
+              { id: 'name', label: 'Name', render: (user: User) => user.name },
+              { id: 'email', label: 'Email', render: (user: User) => user.email },
               {
                 id: 'role',
                 label: 'Role',
-                render: (user: User) => (
-                  <TextField
-                    size="small"
-                    select
-                    value={user.role}
-                    onChange={(event) => void updateRole(user.id, event.target.value as Role)}
-                  >
-                    {roleOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                ),
+                render: (user: User) => user.role,
               },
               {
                 id: 'actions',
@@ -141,7 +126,7 @@ export const AdminUsersPage = () => {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete user"
-        description={`Delete ${deleteTarget?.username ?? ''}?`}
+        description={`Delete ${deleteTarget?.email ?? ''}?`}
         confirmText="Delete"
         confirmColor="error"
         onClose={() => setDeleteTarget(null)}

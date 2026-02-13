@@ -124,7 +124,7 @@ export const TasksTable = ({
           <HistoryIcon fontSize="small" sx={{ mr: 1 }} /> View History
         </MenuItem>
         <MenuItem
-          disabled={readOnly || selectedTask?.status === 'NOT_SCHEDULED'}
+          disabled={readOnly}
           onClick={() => {
             if (selectedTask) {
               onTogglePause(selectedTask);
@@ -132,14 +132,12 @@ export const TasksTable = ({
             setAnchorEl(null);
           }}
         >
-          {selectedTask?.status === 'PAUSED' ? (
+          {selectedTask?.status === 'NOT_SCHEDULED' ? (
             <PlayCircleOutlineIcon fontSize="small" sx={{ mr: 1 }} />
           ) : (
             <PauseCircleOutlineIcon fontSize="small" sx={{ mr: 1 }} />
           )}
-          {selectedTask?.status === 'NOT_SCHEDULED'
-            ? 'Task Not Scheduled'
-            : `${selectedTask?.status === 'PAUSED' ? 'Resume' : 'Pause'} Task`}
+          {selectedTask?.status === 'NOT_SCHEDULED' ? 'Activate Task' : 'Set Not Scheduled'}
         </MenuItem>
         <MenuItem
           disabled={readOnly}

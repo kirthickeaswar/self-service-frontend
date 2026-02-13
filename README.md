@@ -162,3 +162,8 @@ npm run build
 ```
 
 This should compile TypeScript and build Vite output in `dist/`.
+
+## 13) Detailed React Learning Guide
+
+- If you are new to React, read:
+  - `docs/REACT_LEARNING_GUIDE.md`

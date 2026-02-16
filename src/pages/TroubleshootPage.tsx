@@ -113,7 +113,7 @@ export const TroubleshootPage = () => {
               id: 'actions',
               label: 'Actions',
               render: (task: Task) => (
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ width: '100%' }}>
                   <Button
                     size="small"
                     variant="contained"

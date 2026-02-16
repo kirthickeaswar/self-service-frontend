@@ -234,6 +234,8 @@ export const ClientTaskDetailsPage = () => {
   }
   if (error) return <Alert severity="error">{error}</Alert>;
   if (!task) return <EmptyState title="Task not found" />;
+  const activeSchedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
+  const isTaskPaused = activeSchedules.length > 0 && activeSchedules.every((schedule) => schedule.status === 'PAUSED');
 
   return (
     <Stack spacing={3}>
@@ -250,11 +252,11 @@ export const ClientTaskDetailsPage = () => {
             {canEdit ? (
               <Button
                 variant="outlined"
-                startIcon={task.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
+                startIcon={isTaskPaused ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
                 disabled={updatingTaskPause}
                 onClick={() => void toggleTaskPause()}
               >
-                {updatingTaskPause ? 'Updating...' : task.status === 'PAUSED' ? 'Resume Task' : 'Pause Task'}
+                {updatingTaskPause ? 'Updating...' : isTaskPaused ? 'Resume Task' : 'Pause Task'}
               </Button>
             ) : null}
             {canEdit ? (

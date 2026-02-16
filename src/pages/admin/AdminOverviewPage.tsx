@@ -3,15 +3,31 @@ import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Alert, Box, Card, CardContent, Chip, LinearProgress, List, ListItem, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusChip } from '@/components/common/StatusChip';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { Task, TaskHistoryEntry } from '@/types/domain';
 
 export const AdminOverviewPage = () => {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [historyEntries, setHistoryEntries] = useState<TaskHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -249,12 +265,14 @@ export const AdminOverviewPage = () => {
               ) : (
                 <List disablePadding sx={{ maxHeight: 318, overflowY: 'auto' }}>
                   {attentionTasks.slice(0, 6).map((task) => (
-                    <ListItem key={task.id} divider>
-                      <ListItemText
-                        primary={`${task.name} (${task.createdBy})`}
-                        secondary={`Updated ${new Date(task.updatedAt).toLocaleString()}`}
-                      />
-                      <StatusChip status={task.status} />
+                    <ListItem key={task.id} divider disablePadding>
+                      <ListItemButton onClick={() => navigate(`/admin/tasks/${task.id}`)} sx={{ py: 1 }}>
+                        <ListItemText
+                          primary={`${task.name} (${task.createdBy})`}
+                          secondary={`Updated ${new Date(task.updatedAt).toLocaleString()}`}
+                        />
+                        <StatusChip status={task.status} />
+                      </ListItemButton>
                     </ListItem>
                   ))}
                 </List>

@@ -1,6 +1,21 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import { Alert, Button, Card, CardContent, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  MenuItem,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/app/AuthContext';
@@ -18,6 +33,11 @@ const roleLabelMap: Record<Role, string> = {
   ADMIN: 'Admin',
 };
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type PendingUserInput = {
+  name: string;
+  email: string;
+  role: Role;
+};
 
 export const AdminUsersPage = () => {
   const { user } = useAuth();
@@ -29,6 +49,8 @@ export const AdminUsersPage = () => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('VIEWER');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [pendingAddUser, setPendingAddUser] = useState<PendingUserInput | null>(null);
+  const [creatingUser, setCreatingUser] = useState(false);
   const normalizedEmail = email.trim().toLowerCase();
   const isEmailValid = emailRegex.test(normalizedEmail);
 
@@ -49,20 +71,35 @@ export const AdminUsersPage = () => {
     void load();
   }, []);
 
-  const addUser = async () => {
+  const openAddUserConfirm = () => {
     if (!isEmailValid) {
       showToast('Please enter a valid email address (example: user@domain.com).', 'error');
       return;
     }
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    setPendingAddUser({
+      name: trimmedName,
+      email: normalizedEmail,
+      role,
+    });
+  };
+
+  const addUser = async () => {
+    if (!pendingAddUser) return;
+    setCreatingUser(true);
     try {
-      await tasksApi.createUser({ name, email: normalizedEmail, role });
+      await tasksApi.createUser(pendingAddUser);
       setName('');
       setEmail('');
       setRole('VIEWER');
+      setPendingAddUser(null);
       await load();
       showToast('User created', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to create user', 'error');
+    } finally {
+      setCreatingUser(false);
     }
   };
 
@@ -122,7 +159,7 @@ export const AdminUsersPage = () => {
                 fullWidth
                 variant="contained"
                 startIcon={<PersonAddAlt1Icon />}
-                onClick={() => void addUser()}
+                onClick={openAddUserConfirm}
                 disabled={!name.trim() || !normalizedEmail || !isEmailValid}
                 sx={{
                   height: 56,
@@ -175,6 +212,43 @@ export const AdminUsersPage = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => void deleteUser()}
       />
+
+      <Dialog open={Boolean(pendingAddUser)} onClose={() => (creatingUser ? null : setPendingAddUser(null))} fullWidth maxWidth="xs">
+        <DialogTitle>Confirm New User</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Please review the details before adding this user.
+          </Typography>
+          <Stack divider={<Divider flexItem />} spacing={1.2}>
+            <Stack direction="row" justifyContent="space-between" gap={2}>
+              <Typography variant="caption" color="text.secondary">
+                Name
+              </Typography>
+              <Typography variant="body2">{pendingAddUser?.name ?? '-'}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" gap={2}>
+              <Typography variant="caption" color="text.secondary">
+                Email
+              </Typography>
+              <Typography variant="body2">{pendingAddUser?.email ?? '-'}</Typography>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" gap={2}>
+              <Typography variant="caption" color="text.secondary">
+                Role
+              </Typography>
+              <Typography variant="body2">{pendingAddUser ? roleLabelMap[pendingAddUser.role] : '-'}</Typography>
+            </Stack>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingAddUser(null)} disabled={creatingUser}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={() => void addUser()} disabled={creatingUser}>
+            {creatingUser ? 'Adding...' : 'Confirm'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };

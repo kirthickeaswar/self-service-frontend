@@ -1,6 +1,7 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import DescriptionIcon from '@mui/icons-material/Description';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import AddTaskIcon from '@mui/icons-material/AddTask';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -23,11 +24,9 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/app/AuthContext';
-import { tasksApi } from '@/features/tasks/api/tasksApi';
-import { Task } from '@/types/domain';
 
 const drawerWidth = 260;
 
@@ -41,6 +40,7 @@ const viewerLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Audit', path: '/app/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Troubleshoot', path: '/app/troubleshoot', icon: <BuildCircleIcon fontSize="small" /> },
   { label: 'Change Password', path: '/app/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
@@ -49,6 +49,7 @@ const editorLinks: MenuLink[] = [
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/app/create-task', icon: <AddTaskIcon fontSize="small" /> },
   { label: 'Audit', path: '/app/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Troubleshoot', path: '/app/troubleshoot', icon: <BuildCircleIcon fontSize="small" /> },
   { label: 'Change Password', path: '/app/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
@@ -59,6 +60,7 @@ const adminLinks: MenuLink[] = [
   { label: 'Task Types', path: '/admin/task-types', icon: <CategoryIcon fontSize="small" /> },
   { label: 'Users', path: '/admin/users', icon: <GroupIcon fontSize="small" /> },
   { label: 'Audit', path: '/admin/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Troubleshoot', path: '/admin/troubleshoot', icon: <BuildCircleIcon fontSize="small" /> },
   { label: 'Change Password', path: '/admin/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
@@ -71,7 +73,6 @@ const roleLabelMap = {
 export const AppShell = () => {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [errorTasks, setErrorTasks] = useState<Task[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -80,24 +81,6 @@ export const AppShell = () => {
     if (user?.role === 'EDITOR') return editorLinks;
     return viewerLinks;
   }, [user?.role]);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadErrorTasks = async () => {
-      try {
-        const items = await tasksApi.list();
-        if (!mounted) return;
-        setErrorTasks(items.filter((item) => item.status === 'ERROR').slice(0, 12));
-      } catch {
-        if (!mounted) return;
-        setErrorTasks([]);
-      }
-    };
-    void loadErrorTasks();
-    return () => {
-      mounted = false;
-    };
-  }, [location.pathname]);
 
   const drawerContent = (
     <Box sx={{ px: 2, py: 2 }}>
@@ -148,43 +131,6 @@ export const AppShell = () => {
             </ListItemButton>
           );
         })}
-      </List>
-
-      <Divider sx={{ my: 1.5 }} />
-      <Typography variant="caption" color="text.secondary" sx={{ px: 1, mb: 1, display: 'block' }}>
-        Troubleshoot Sidebar
-      </Typography>
-      <List disablePadding>
-        {errorTasks.length === 0 ? (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
-            No tasks in error state
-          </Typography>
-        ) : (
-          errorTasks.map((task) => {
-            const basePath = user?.role === 'ADMIN' ? '/admin/audit' : '/app/audit';
-            const path = `${basePath}?taskId=${task.id}`;
-            const selected = location.pathname === basePath && new URLSearchParams(location.search).get('taskId') === String(task.id);
-            return (
-              <ListItemButton
-                key={task.id}
-                dense
-                selected={selected}
-                onClick={() => {
-                  navigate(path);
-                  setMobileOpen(false);
-                }}
-                sx={{ mb: 0.5, borderRadius: 2 }}
-              >
-                <ListItemText
-                  primary={task.name}
-                  secondary="Error"
-                  primaryTypographyProps={{ variant: 'caption' }}
-                  secondaryTypographyProps={{ variant: 'caption' }}
-                />
-              </ListItemButton>
-            );
-          })
-        )}
       </List>
     </Box>
   );

@@ -6,6 +6,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { CreatePasswordPage } from '@/pages/CreatePasswordPage';
 import { TaskHistoryPage } from '@/pages/TaskHistoryPage';
 import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
+import { TroubleshootPage } from '@/pages/TroubleshootPage';
 import { ClientDashboardPage } from '@/pages/client/ClientDashboardPage';
 import { ClientTasksPage } from '@/pages/client/ClientTasksPage';
 import { ClientTaskDetailsPage } from '@/pages/client/ClientTaskDetailsPage';
@@ -50,7 +51,7 @@ export const router = createBrowserRouter([
   { path: '/client/tasks', element: <Navigate to="/app/tasks" replace /> },
   { path: '/client/create-task', element: <Navigate to="/app/create-task" replace /> },
   { path: '/client/logs', element: <Navigate to="/app/audit" replace /> },
-  { path: '/client/troubleshoot', element: <Navigate to="/app/audit" replace /> },
+  { path: '/client/troubleshoot', element: <Navigate to="/app/troubleshoot" replace /> },
   {
     element: <RequireAuth />,
     children: [
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
               { path: 'tasks/:taskId/history', element: <TaskHistoryPage /> },
               { path: 'create-task', element: <ClientCreateTaskPage /> },
               { path: 'audit', element: <ClientTroubleshootPage /> },
+              { path: 'troubleshoot', element: <TroubleshootPage /> },
               { path: 'logs', element: <Navigate to="/app/audit" replace /> },
               { path: 'change-password', element: <ChangePasswordPage /> },
             ],
@@ -90,6 +92,7 @@ export const router = createBrowserRouter([
               { path: 'task-types', element: <AdminTaskTypesPage /> },
               { path: 'users', element: <AdminUsersPage /> },
               { path: 'audit', element: <AdminLogsPage /> },
+              { path: 'troubleshoot', element: <TroubleshootPage /> },
               { path: 'logs', element: <Navigate to="/admin/audit" replace /> },
               { path: 'change-password', element: <ChangePasswordPage /> },
             ],

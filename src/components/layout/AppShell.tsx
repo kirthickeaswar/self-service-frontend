@@ -103,7 +103,7 @@ export const AppShell = () => {
             AutoTasker
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Self-Service Utility
+            AutoTasker Utility
           </Typography>
         </Box>
       </Stack>

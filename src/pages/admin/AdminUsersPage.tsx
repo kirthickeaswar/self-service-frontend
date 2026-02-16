@@ -1,6 +1,7 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Alert, Button, Card, CardContent, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -82,33 +83,54 @@ export const AdminUsersPage = () => {
 
       <Card>
         <CardContent>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-            <TextField label="Name" value={name} onChange={(event) => setName(event.target.value)} />
-            <TextField
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="example@domain.com"
-              error={Boolean(email) && !isEmailValid}
-              helperText={Boolean(email) && !isEmailValid ? 'Enter a valid email format: user@domain.com' : ' '}
-            />
-            <TextField select label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
-              {roleOptions.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {roleLabelMap[option]}
-                </MenuItem>
-              ))}
-            </TextField>
-            <Button
-              variant="contained"
-              startIcon={<PersonAddAlt1Icon />}
-              onClick={() => void addUser()}
-              disabled={!name.trim() || !normalizedEmail || !isEmailValid}
-            >
-              Add User
-            </Button>
-          </Stack>
+          <Grid container spacing={1.5} alignItems="flex-start">
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField fullWidth label="Name" value={name} onChange={(event) => setName(event.target.value)} helperText=" " />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="example@domain.com"
+                error={Boolean(email) && !isEmailValid}
+                helperText={Boolean(email) && !isEmailValid ? 'Enter a valid email format: user@domain.com' : ' '}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                fullWidth
+                select
+                label="Role"
+                value={role}
+                onChange={(event) => setRole(event.target.value as Role)}
+                helperText=" "
+              >
+                {roleOptions.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {roleLabelMap[option]}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid size={{ xs: 12, md: 2 }} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+              <Button
+                fullWidth
+                variant="contained"
+                startIcon={<PersonAddAlt1Icon />}
+                onClick={() => void addUser()}
+                disabled={!name.trim() || !normalizedEmail || !isEmailValid}
+                sx={{
+                  height: 56,
+                  mt: { xs: 0, md: '1px' },
+                }}
+              >
+                Add User
+              </Button>
+            </Grid>
+          </Grid>
         </CardContent>
       </Card>
 

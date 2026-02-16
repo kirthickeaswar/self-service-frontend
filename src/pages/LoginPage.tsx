@@ -41,6 +41,10 @@ export const LoginPage = () => {
         navigate(`/create-password?email=${encodeURIComponent(normalized)}`, { replace: true });
         return;
       }
+      if (stage === 'USER_NOT_FOUND') {
+        setError('User does not exist. Please contact admin.');
+        return;
+      }
       setStep('PASSWORD');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unable to continue';

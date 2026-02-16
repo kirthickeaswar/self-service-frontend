@@ -436,7 +436,7 @@ export const tasksApi = {
     return { id: response.id, username: response.email || response.name, role: toRole(response.userLevel), userLevel: response.userLevel };
   },
 
-  probeLogin: async (email: string): Promise<'ENTER_PASSWORD' | 'SET_PASSWORD'> => {
+  probeLogin: async (email: string): Promise<'ENTER_PASSWORD' | 'SET_PASSWORD' | 'USER_NOT_FOUND'> => {
     const probePassword = `__probe__${Date.now()}_${Math.random().toString(36).slice(2)}__`;
     try {
       await tasksApi.login(email, probePassword);
@@ -445,6 +445,15 @@ export const tasksApi = {
       if (isApiError(error)) {
         if (error.status === 403 && error.data?.requiresPasswordSetup) {
           return 'SET_PASSWORD';
+        }
+        const errorDetails = `${error.message} ${error.data?.detail ?? ''} ${error.data?.title ?? ''}`.toLowerCase();
+        const userNotFound =
+          errorDetails.includes('email not found') ||
+          errorDetails.includes('user not found') ||
+          errorDetails.includes('does not exist') ||
+          errorDetails.includes('not found');
+        if (error.status === 404 || (error.status === 401 && userNotFound)) {
+          return 'USER_NOT_FOUND';
         }
         if (error.status === 401) {
           return 'ENTER_PASSWORD';

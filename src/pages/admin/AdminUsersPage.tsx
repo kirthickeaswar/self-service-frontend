@@ -3,6 +3,7 @@ import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Alert, Button, Card, CardContent, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/app/AuthContext';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { DataTable } from '@/components/common/DataTable';
@@ -19,6 +20,7 @@ const roleLabelMap: Record<Role, string> = {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const AdminUsersPage = () => {
+  const { user } = useAuth();
   const { showToast } = useSnackbar();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export const AdminUsersPage = () => {
   const deleteUser = async () => {
     if (!deleteTarget) return;
     try {
-      await tasksApi.deleteUser(deleteTarget.id);
+      await tasksApi.deleteUser(deleteTarget.id, user?.id);
       setDeleteTarget(null);
       await load();
       showToast('User deleted', 'success');

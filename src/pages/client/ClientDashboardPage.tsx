@@ -71,24 +71,18 @@ export const ClientDashboardPage = () => {
     }).length;
     const completedRuns = successRuns + failedRuns + canceledRuns;
     const successRate = completedRuns > 0 ? Math.round((successRuns / completedRuns) * 100) : 0;
-
-    const durationMs = historyEntries
-      .filter((entry) => Boolean(entry.startedAt) && Boolean(entry.finishedAt))
-      .map((entry) => +new Date(entry.finishedAt as string) - +new Date(entry.startedAt))
-      .filter((value) => value > 0);
-    const avgDurationSeconds = durationMs.length > 0 ? Math.round(durationMs.reduce((sum, value) => sum + value, 0) / durationMs.length / 1000) : 0;
+    const pausedSchedules = tasks.flatMap((task) => task.schedules).filter((schedule) => schedule.status === 'PAUSED').length;
 
     return {
       totalRuns,
       failedRuns,
       runningOrQueuedRuns,
-      canceledRuns,
       completedRuns,
       successRuns,
       successRate,
-      avgDurationSeconds,
+      pausedSchedules,
     };
-  }, [historyEntries]);
+  }, [historyEntries, tasks]);
 
   const nextRuns = useMemo(() => {
     return tasks
@@ -233,15 +227,9 @@ export const ClientDashboardPage = () => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Canceled
+                        Paused Schedules
                       </Typography>
-                      <Typography variant="subtitle2">{executionSummary.canceledRuns}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 4 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Avg Duration
-                      </Typography>
-                      <Typography variant="subtitle2">{executionSummary.avgDurationSeconds}s</Typography>
+                      <Typography variant="subtitle2">{executionSummary.pausedSchedules}</Typography>
                     </Grid>
                   </Grid>
                 </Stack>

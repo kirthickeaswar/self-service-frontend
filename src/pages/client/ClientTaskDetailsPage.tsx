@@ -74,6 +74,7 @@ export const ClientTaskDetailsPage = () => {
   const [scheduleToEdit, setScheduleToEdit] = useState<Schedule | null>(null);
   const [editScheduleInput, setEditScheduleInput] = useState<CreateScheduleInput>(defaultSchedule);
   const [runningTask, setRunningTask] = useState(false);
+  const [updatingTaskPause, setUpdatingTaskPause] = useState(false);
 
   const load = async () => {
     if (!taskId || Number.isNaN(taskIdNumber)) return;
@@ -192,6 +193,37 @@ export const ClientTaskDetailsPage = () => {
     }
   };
 
+  const toggleTaskPause = async () => {
+    if (!task) return;
+    const schedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
+    if (schedules.length === 0) {
+      showToast('Not Scheduled', 'info');
+      return;
+    }
+
+    const shouldResume = schedules.every((schedule) => schedule.status === 'PAUSED');
+    const targetStatus = shouldResume ? 'SCHEDULED' : 'PAUSED';
+    const toUpdate = shouldResume
+      ? schedules.filter((schedule) => schedule.status === 'PAUSED')
+      : schedules.filter((schedule) => schedule.status === 'SCHEDULED');
+
+    if (toUpdate.length === 0) {
+      showToast(shouldResume ? 'Nothing to resume' : 'Nothing to pause', 'info');
+      return;
+    }
+
+    setUpdatingTaskPause(true);
+    try {
+      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus, user?.id)));
+      showToast(shouldResume ? 'Task resumed' : 'Task paused', 'success');
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Unable to update task schedules', 'error');
+    } finally {
+      setUpdatingTaskPause(false);
+    }
+  };
+
   if (loading) {
     return (
       <Stack spacing={2}>
@@ -213,6 +245,16 @@ export const ClientTaskDetailsPage = () => {
             {canEdit ? (
               <Button variant="contained" startIcon={<BoltIcon />} disabled={runningTask} onClick={() => void runTaskNow()}>
                 {runningTask ? 'Running...' : 'Run Now'}
+              </Button>
+            ) : null}
+            {canEdit ? (
+              <Button
+                variant="outlined"
+                startIcon={task.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
+                disabled={updatingTaskPause}
+                onClick={() => void toggleTaskPause()}
+              >
+                {updatingTaskPause ? 'Updating...' : task.status === 'PAUSED' ? 'Resume Task' : 'Pause Task'}
               </Button>
             ) : null}
             {canEdit ? (

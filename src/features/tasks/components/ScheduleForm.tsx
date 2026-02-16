@@ -21,7 +21,7 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
 
   const updateCronPart = (index: number, nextValue: string) => {
     const nextParts = [...cronParts];
-    nextParts[index] = nextValue;
+    nextParts[index] = nextValue.replace(/\s+/g, '');
     onChange({ ...value, cronExpression: nextParts.join(' ') });
   };
 
@@ -78,63 +78,54 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
         <Stack spacing={1.5}>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, md: 4 }}>
-              <TextField select fullWidth label="Minute" value={cronParts[0]} onChange={(event) => updateCronPart(0, event.target.value)}>
-                <MenuItem value="*">Every minute (*)</MenuItem>
-                <MenuItem value="*/5">Every 5 minutes</MenuItem>
-                <MenuItem value="*/10">Every 10 minutes</MenuItem>
-                <MenuItem value="*/15">Every 15 minutes</MenuItem>
-                <MenuItem value="0">At minute 0</MenuItem>
-                <MenuItem value="30">At minute 30</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField select fullWidth label="Hour" value={cronParts[1]} onChange={(event) => updateCronPart(1, event.target.value)}>
-                <MenuItem value="*">Every hour (*)</MenuItem>
-                <MenuItem value="*/2">Every 2 hours</MenuItem>
-                <MenuItem value="*/3">Every 3 hours</MenuItem>
-                <MenuItem value="9">09:00</MenuItem>
-                <MenuItem value="18">18:00</MenuItem>
-              </TextField>
+              <TextField
+                fullWidth
+                label="Minute"
+                value={cronParts[0]}
+                onChange={(event) => updateCronPart(0, event.target.value)}
+                placeholder="* | */5 | 0,15,30,45 | 0-59"
+              />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                select
+                fullWidth
+                label="Hour"
+                value={cronParts[1]}
+                onChange={(event) => updateCronPart(1, event.target.value)}
+                placeholder="* | */2 | 9-18 | 0-23"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
                 fullWidth
                 label="Day of Month"
                 value={cronParts[2]}
                 onChange={(event) => updateCronPart(2, event.target.value)}
-              >
-                <MenuItem value="*">Every day (*)</MenuItem>
-                <MenuItem value="1">1</MenuItem>
-                <MenuItem value="15">15</MenuItem>
-                <MenuItem value="28">28</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField select fullWidth label="Month" value={cronParts[3]} onChange={(event) => updateCronPart(3, event.target.value)}>
-                <MenuItem value="*">Every month (*)</MenuItem>
-                <MenuItem value="1">January</MenuItem>
-                <MenuItem value="4">April</MenuItem>
-                <MenuItem value="7">July</MenuItem>
-                <MenuItem value="10">October</MenuItem>
-              </TextField>
+                placeholder="* | 1,15 | 1-31"
+              />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                select
+                fullWidth
+                label="Month"
+                value={cronParts[3]}
+                onChange={(event) => updateCronPart(3, event.target.value)}
+                placeholder="* | 1,4,7,10 | JAN,APR"
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
                 fullWidth
                 label="Day of Week"
                 value={cronParts[4]}
                 onChange={(event) => updateCronPart(4, event.target.value)}
-              >
-                <MenuItem value="*">Any day (*)</MenuItem>
-                <MenuItem value="1-5">Mon-Fri</MenuItem>
-                <MenuItem value="1">Monday</MenuItem>
-                <MenuItem value="6">Saturday</MenuItem>
-                <MenuItem value="0">Sunday</MenuItem>
-              </TextField>
+                placeholder="* | 1-5 | MON-FRI | 0,6"
+              />
             </Grid>
           </Grid>
+          <Typography variant="caption" color="text.secondary">
+            Supports any standard cron token per field: lists (,), ranges (-), steps (/), and aliases (JAN-DEC, MON-SUN).
+          </Typography>
           <Typography variant="caption" color={cronError ? 'error.main' : 'text.secondary'}>
             {cronError ? cronError : `Generated Cron: ${cronParts.join(' ')}`}
           </Typography>

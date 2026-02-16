@@ -67,33 +67,22 @@ export const AdminOverviewPage = () => {
     const completedRuns = successRuns + failedRuns + canceledRuns;
     const successRate = completedRuns > 0 ? Math.round((successRuns / completedRuns) * 100) : 0;
 
-    const durationMs = historyEntries
-      .filter((entry) => Boolean(entry.startedAt) && Boolean(entry.finishedAt))
-      .map((entry) => +new Date(entry.finishedAt as string) - +new Date(entry.startedAt))
-      .filter((value) => value > 0);
-    const avgDurationSeconds = durationMs.length > 0 ? Math.round(durationMs.reduce((sum, value) => sum + value, 0) / durationMs.length / 1000) : 0;
-
     const now = Date.now();
     const oneDayAgo = now - 24 * 60 * 60 * 1000;
     const runsLast24h = historyEntries.filter((entry) => +new Date(entry.startedAt) >= oneDayAgo).length;
-
-    const lastRunAt = historyEntries.length
-      ? historyEntries.reduce((latest, entry) => (+new Date(entry.startedAt) > +new Date(latest.startedAt) ? entry : latest), historyEntries[0]).startedAt
-      : null;
+    const pausedSchedules = tasks.flatMap((task) => task.schedules).filter((schedule) => schedule.status === 'PAUSED').length;
 
     return {
       totalRuns,
       successRuns,
       failedRuns,
-      canceledRuns,
       runningOrQueuedRuns,
       completedRuns,
       successRate,
-      avgDurationSeconds,
       runsLast24h,
-      lastRunAt,
+      pausedSchedules,
     };
-  }, [historyEntries]);
+  }, [historyEntries, tasks]);
 
   const attentionTasks = tasks.filter(
     (task) => task.status === 'ERROR' || task.schedules.some((schedule) => schedule.status === 'FAILED'),
@@ -223,29 +212,15 @@ export const AdminOverviewPage = () => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Canceled
+                        Paused Schedules
                       </Typography>
-                      <Typography variant="subtitle2">{executionSummary.canceledRuns}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 4 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Avg Duration
-                      </Typography>
-                      <Typography variant="subtitle2">{executionSummary.avgDurationSeconds}s</Typography>
+                      <Typography variant="subtitle2">{executionSummary.pausedSchedules}</Typography>
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
                         Runs (24h)
                       </Typography>
                       <Typography variant="subtitle2">{executionSummary.runsLast24h}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 12 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Last Run
-                      </Typography>
-                      <Typography variant="subtitle2">
-                        {executionSummary.lastRunAt ? new Date(executionSummary.lastRunAt).toLocaleString() : 'N/A'}
-                      </Typography>
                     </Grid>
                   </Grid>
                 </Stack>

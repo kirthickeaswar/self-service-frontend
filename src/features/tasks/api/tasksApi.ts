@@ -218,6 +218,18 @@ const buildTask = (
 ): Task => {
   const taskType = typeById.get(task.taskTypeId);
   const owner = userById.get(task.ownerId);
+  const mappedSchedules = schedules
+    .filter((item) => item.status !== 'Deleted')
+    .map((schedule) => toScheduleModel(schedule));
+  const backendStatus = toTaskStatus(task.status);
+
+  const derivedStatus: TaskStatus = (() => {
+    if (backendStatus === 'ERROR' || backendStatus === 'DELETED') return backendStatus;
+    if (mappedSchedules.length === 0) return 'NOT_SCHEDULED';
+    if (mappedSchedules.every((schedule) => schedule.status === 'PAUSED')) return 'PAUSED';
+    if (mappedSchedules.some((schedule) => schedule.status === 'SCHEDULED')) return 'ACTIVE';
+    return backendStatus;
+  })();
 
   return {
     id: task.id,
@@ -226,12 +238,10 @@ const buildTask = (
     accessEmails: listToEmails(task.emailList),
     type: taskType?.title ?? `TYPE-${task.taskTypeId}`,
     createdBy: owner?.email ?? owner?.name ?? `User-${task.ownerId}`,
-    status: toTaskStatus(task.status),
+    status: derivedStatus,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt ?? task.createdAt,
-    schedules: schedules
-      .filter((item) => item.status !== 'Deleted')
-      .map((schedule) => toScheduleModel(schedule)),
+    schedules: mappedSchedules,
   };
 };
 
@@ -505,8 +515,8 @@ export const tasksApi = {
     return items.sort((a, b) => +new Date(b.startedAt) - +new Date(a.startedAt));
   },
 
-  deleteUser: async (userId: number): Promise<{ success: boolean }> => {
-    await httpClient.delete<void>(`/users/${userId}`);
+  deleteUser: async (userId: number, actorUserId?: number): Promise<{ success: boolean }> => {
+    await httpClient.delete<void>(withActorUserId(`/users/${userId}`, actorUserId));
     return { success: true };
   },
 };

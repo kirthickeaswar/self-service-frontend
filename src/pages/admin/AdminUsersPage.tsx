@@ -15,6 +15,7 @@ const roleLabelMap: Record<Role, string> = {
   EDITOR: 'Editor',
   ADMIN: 'Admin',
 };
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const AdminUsersPage = () => {
   const { showToast } = useSnackbar();
@@ -25,6 +26,8 @@ export const AdminUsersPage = () => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('VIEWER');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const normalizedEmail = email.trim().toLowerCase();
+  const isEmailValid = emailRegex.test(normalizedEmail);
 
   const load = async () => {
     setLoading(true);
@@ -44,8 +47,12 @@ export const AdminUsersPage = () => {
   }, []);
 
   const addUser = async () => {
+    if (!isEmailValid) {
+      showToast('Please enter a valid email address (example: user@domain.com).', 'error');
+      return;
+    }
     try {
-      await tasksApi.createUser({ name, email, role });
+      await tasksApi.createUser({ name, email: normalizedEmail, role });
       setName('');
       setEmail('');
       setRole('VIEWER');
@@ -77,7 +84,15 @@ export const AdminUsersPage = () => {
         <CardContent>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
             <TextField label="Name" value={name} onChange={(event) => setName(event.target.value)} />
-            <TextField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="example@domain.com"
+              error={Boolean(email) && !isEmailValid}
+              helperText={Boolean(email) && !isEmailValid ? 'Enter a valid email format: user@domain.com' : ' '}
+            />
             <TextField select label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
               {roleOptions.map((option) => (
                 <MenuItem key={option} value={option}>
@@ -89,7 +104,7 @@ export const AdminUsersPage = () => {
               variant="contained"
               startIcon={<PersonAddAlt1Icon />}
               onClick={() => void addUser()}
-              disabled={!name.trim() || !email.trim()}
+              disabled={!name.trim() || !normalizedEmail || !isEmailValid}
             >
               Add User
             </Button>

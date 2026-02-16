@@ -193,9 +193,6 @@ export const ClientDashboardPage = () => {
             <CardContent>
               <Stack spacing={1.2} sx={{ mb: 1.5 }}>
                 <Typography variant="h6">Execution Summary</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Aggregated from Task History API across visible tasks.
-                </Typography>
               </Stack>
               {historyLoading ? (
                 <Stack spacing={1}>

@@ -54,6 +54,20 @@ export interface LogEntry {
   source?: LogSource;
 }
 
+export type TaskHistoryStatus = 'Queued' | 'Running' | 'Success' | 'Failed' | 'Canceled' | string;
+
+export interface TaskHistoryEntry {
+  id: number;
+  taskId: number;
+  scheduleId?: number | null;
+  status: TaskHistoryStatus;
+  startedAt: string;
+  finishedAt?: string | null;
+  exitCode?: number | null;
+  outputSnippet?: string;
+  createdAt: string;
+}
+
 export type Role = 'ADMIN' | 'EDITOR' | 'VIEWER';
 
 export interface User {

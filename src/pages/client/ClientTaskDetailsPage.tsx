@@ -57,6 +57,7 @@ export const ClientTaskDetailsPage = () => {
   const isAdminView = location.pathname.startsWith('/admin');
   const canEdit = isAdminView || user?.role !== 'VIEWER';
   const backPath = isAdminView ? '/admin/tasks' : '/app/tasks';
+  const historyPath = isAdminView ? `/admin/tasks/${taskIdNumber}/history` : `/app/tasks/${taskIdNumber}/history`;
   const { showToast } = useSnackbar();
   const { taskTypes } = useTaskTypes();
   const [task, setTask] = useState<Task | null>(null);
@@ -96,7 +97,7 @@ export const ClientTaskDetailsPage = () => {
     if (Number.isNaN(taskIdNumber)) return;
     try {
       const next = schedule.status === 'PAUSED' ? 'SCHEDULED' : 'PAUSED';
-      await tasksApi.updateScheduleStatus(taskIdNumber, schedule.id, next);
+      await tasksApi.updateScheduleStatus(taskIdNumber, schedule.id, next, user?.id);
       showToast(`Schedule ${next === 'PAUSED' ? 'paused' : 'resumed'}`, 'success');
       await load();
     } catch (err) {
@@ -107,7 +108,7 @@ export const ClientTaskDetailsPage = () => {
   const deleteSchedule = async () => {
     if (Number.isNaN(taskIdNumber) || !scheduleToDelete) return;
     try {
-      await tasksApi.deleteSchedule(taskIdNumber, scheduleToDelete.id);
+      await tasksApi.deleteSchedule(taskIdNumber, scheduleToDelete.id, user?.id);
       setScheduleToDelete(null);
       showToast('Schedule removed', 'success');
       await load();
@@ -119,7 +120,7 @@ export const ClientTaskDetailsPage = () => {
   const addSchedule = async () => {
     if (Number.isNaN(taskIdNumber)) return;
     try {
-      await tasksApi.addSchedule(taskIdNumber, scheduleInput);
+      await tasksApi.addSchedule(taskIdNumber, scheduleInput, user?.id);
       setAddOpen(false);
       setScheduleInput(defaultSchedule);
       showToast('Schedule created', 'success');
@@ -168,7 +169,7 @@ export const ClientTaskDetailsPage = () => {
   const saveScheduleEdit = async () => {
     if (Number.isNaN(taskIdNumber) || !scheduleToEdit) return;
     try {
-      await tasksApi.updateSchedule(taskIdNumber, scheduleToEdit.id, editScheduleInput);
+      await tasksApi.updateSchedule(taskIdNumber, scheduleToEdit.id, editScheduleInput, user?.id);
       setScheduleToEdit(null);
       showToast('Schedule updated', 'success');
       await load();
@@ -181,7 +182,7 @@ export const ClientTaskDetailsPage = () => {
     if (!task) return;
     setRunningTask(true);
     try {
-      const result = await tasksApi.run(task.id);
+      const result = await tasksApi.run(task.id, user?.id);
       showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
       await load();
     } catch (err) {
@@ -219,6 +220,9 @@ export const ClientTaskDetailsPage = () => {
                 Edit Task
               </Button>
             ) : null}
+            <Button variant="outlined" onClick={() => navigate(historyPath)}>
+              History
+            </Button>
             <Button variant="outlined" onClick={() => navigate(backPath)}>
               Back to Tasks
             </Button>

@@ -21,16 +21,12 @@ const toLogEntry = (item: BackendLog): LogEntry => ({
 
 export const logsApi = {
   list: async (filters: LogFilters): Promise<LogEntry[]> => {
-    let logs: BackendLog[] = [];
-    if (filters.taskId || filters.from || filters.to) {
-      const params = new URLSearchParams();
-      if (filters.taskId) params.set('taskId', String(filters.taskId));
-      if (filters.from) params.set('startTimestamp', filters.from);
-      if (filters.to) params.set('endTimestamp', filters.to);
-      logs = await httpClient.get<BackendLog[]>(`/logs?${params.toString()}`);
-    } else {
-      logs = await httpClient.get<BackendLog[]>('/logs/all');
-    }
+    const params = new URLSearchParams();
+    if (filters.taskId) params.set('taskId', String(filters.taskId));
+    if (filters.from) params.set('start', filters.from);
+    if (filters.to) params.set('end', filters.to);
+    const query = params.toString();
+    const logs = await httpClient.get<BackendLog[]>(`/audits${query ? `?${query}` : ''}`);
 
     return logs
       .map(toLogEntry)

@@ -6,6 +6,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CategoryIcon from '@mui/icons-material/Category';
 import GroupIcon from '@mui/icons-material/Group';
+import PasswordIcon from '@mui/icons-material/Password';
 import {
   AppBar,
   Box,
@@ -37,14 +38,16 @@ interface MenuLink {
 const viewerLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
-  { label: 'Audit', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/app/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Change Password', path: '/app/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
 const editorLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/app/create-task', icon: <AddTaskIcon fontSize="small" /> },
-  { label: 'Audit', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/app/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Change Password', path: '/app/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
 const adminLinks: MenuLink[] = [
@@ -53,7 +56,8 @@ const adminLinks: MenuLink[] = [
   { label: 'Create Task', path: '/admin/create-task', icon: <AddTaskIcon fontSize="small" /> },
   { label: 'Task Types', path: '/admin/task-types', icon: <CategoryIcon fontSize="small" /> },
   { label: 'Users', path: '/admin/users', icon: <GroupIcon fontSize="small" /> },
-  { label: 'Audit', path: '/admin/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/admin/audit', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Change Password', path: '/admin/change-password', icon: <PasswordIcon fontSize="small" /> },
 ];
 
 const roleLabelMap = {

@@ -8,12 +8,11 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAuth } from '@/app/AuthContext';
 import { useSnackbar } from '@/app/SnackbarContext';
-import { logsApi } from '@/features/logs/api/logsApi';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { useTaskFilters } from '@/features/tasks/hooks/useTaskFilters';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
 import { TasksTable } from '@/features/tasks/components/TasksTable';
-import { LogEntry, Task } from '@/types/domain';
+import { Task } from '@/types/domain';
 
 export const ClientTasksPage = () => {
   const navigate = useNavigate();
@@ -30,14 +29,16 @@ export const ClientTasksPage = () => {
   const { search, setSearch, type, setType, status, setStatus, filters } = useTaskFilters();
   const { taskTypes } = useTaskTypes();
 
-  const buildPreviousRuns = (taskData: Task[], logs: LogEntry[]) => {
+  const buildPreviousRuns = async (taskData: Task[]) => {
     const result: Record<number, string | undefined> = {};
-    taskData.forEach((task) => {
-      const latest = logs
-        .filter((log) => log.taskId === task.id)
-        .sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp))[0];
-      result[task.id] = latest?.timestamp;
+
+    const historyResults = await Promise.allSettled(taskData.map((task) => tasksApi.history(task.id)));
+    historyResults.forEach((entry, index) => {
+      if (entry.status !== 'fulfilled') return;
+      const latest = entry.value[0];
+      result[taskData[index].id] = latest?.startedAt ?? latest?.createdAt;
     });
+
     return result;
   };
 
@@ -56,9 +57,10 @@ export const ClientTasksPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [data, logs] = await Promise.all([tasksApi.list(filters), logsApi.list({})]);
+      const data = await tasksApi.list(filters);
+      const previousRuns = await buildPreviousRuns(data);
       setTasks(data);
-      setPreviousRunsByTask(buildPreviousRuns(data, logs));
+      setPreviousRunsByTask(previousRuns);
       setNextRunsByTask(buildNextRuns(data));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch tasks');
@@ -91,7 +93,7 @@ export const ClientTasksPage = () => {
         return;
       }
 
-      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus)));
+      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus, user?.id)));
       showToast(shouldResume ? 'Task resumed' : 'Task paused', 'success');
       await load();
     } catch (err) {
@@ -104,7 +106,7 @@ export const ClientTasksPage = () => {
   const runTask = async (task: Task) => {
     setBusy(true);
     try {
-      const result = await tasksApi.run(task.id);
+      const result = await tasksApi.run(task.id, user?.id);
       showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
       await load();
     } catch (err) {
@@ -200,7 +202,7 @@ export const ClientTasksPage = () => {
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/app/tasks/${task.id}`)}
-          onViewHistory={(task) => navigate(`/app/logs?taskId=${task.id}`)}
+          onViewHistory={(task) => navigate(`/app/tasks/${task.id}/history`)}
           onRun={(task) => void runTask(task)}
           onTogglePause={(task) => void toggleTaskStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}

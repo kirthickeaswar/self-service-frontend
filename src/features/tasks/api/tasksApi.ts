@@ -5,6 +5,7 @@ import {
   Schedule,
   ScheduleStatus,
   Task,
+  TaskHistoryEntry,
   TaskFilters,
   TaskStatus,
   TaskTypeDefinition,
@@ -62,6 +63,18 @@ interface RunTaskResponse {
   outputSnippet: string;
 }
 
+interface BackendTaskHistoryEntry {
+  id: number;
+  taskId: number;
+  scheduleId?: number | null;
+  status: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  exitCode?: number | null;
+  outputSnippet?: string;
+  createdAt: string;
+}
+
 const toRole = (userLevel: number): Role => {
   if (userLevel === 2) return 'ADMIN';
   if (userLevel === 1) return 'EDITOR';
@@ -94,13 +107,18 @@ const fromScheduleStatus = (status: ScheduleStatus): BackendScheduleStatus => {
   return 'Active';
 };
 
-const csvToEmails = (value: string) =>
+const listToEmails = (value: string) =>
   value
-    .split(',')
+    .split(/[;,]/)
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
 
-const emailsToCsv = (emails: string[]) => emails.map((item) => item.trim().toLowerCase()).filter(Boolean).join(',');
+const emailsToList = (emails: string[]) => emails.map((item) => item.trim().toLowerCase()).filter(Boolean).join(';');
+
+const withActorUserId = (path: string, actorUserId?: number) => {
+  if (!actorUserId) return path;
+  return `${path}${path.includes('?') ? '&' : '?'}actorUserId=${actorUserId}`;
+};
 
 const buildTask = (
   task: BackendTask,
@@ -115,7 +133,7 @@ const buildTask = (
     id: task.id,
     name: task.name,
     description: task.description,
-    accessEmails: csvToEmails(task.emailList),
+    accessEmails: listToEmails(task.emailList),
     type: taskType?.title ?? `TYPE-${task.taskTypeId}`,
     createdBy: owner?.email ?? owner?.name ?? `User-${task.ownerId}`,
     status: toTaskStatus(task.status),
@@ -137,7 +155,9 @@ const buildTask = (
 
 const readTaskTypes = async () => httpClient.get<BackendTaskType[]>('/tasktypes');
 const readUsers = async () => httpClient.get<BackendUser[]>('/users');
-const createPasswordPath = import.meta.env.VITE_CREATE_PASSWORD_PATH ?? '/auth/create-password';
+const setPasswordInitialPath =
+  import.meta.env.VITE_SET_PASSWORD_INITIAL_PATH ?? import.meta.env.VITE_CREATE_PASSWORD_PATH ?? '/auth/set-password-initial';
+const changePasswordPath = import.meta.env.VITE_CHANGE_PASSWORD_PATH ?? '/auth/change-password';
 
 const resolveTaskTypeId = async (title: string) => {
   const types = await readTaskTypes();
@@ -243,7 +263,7 @@ export const tasksApi = {
       description: payload.description,
       taskTypeId,
       ownerId,
-      emailList: emailsToCsv(payload.accessEmails),
+      emailList: emailsToList(payload.accessEmails),
     };
     if (payload.schedule?.mode === 'CRON' && payload.schedule.cronExpression) {
       body.schedule = {
@@ -262,7 +282,7 @@ export const tasksApi = {
       name: payload.name,
       description: payload.description,
       taskTypeId,
-      emailList: emailsToCsv(payload.accessEmails),
+      emailList: emailsToList(payload.accessEmails),
     });
     return tasksApi.getById(taskId);
   },
@@ -277,13 +297,13 @@ export const tasksApi = {
     return tasksApi.getById(taskId);
   },
 
-  run: async (taskId: number): Promise<RunTaskResponse> => {
-    return httpClient.post<RunTaskResponse>(`/tasks/${taskId}/run`, {});
+  run: async (taskId: number, actorUserId?: number): Promise<RunTaskResponse> => {
+    return httpClient.post<RunTaskResponse>(withActorUserId(`/tasks/${taskId}/run`, actorUserId), {});
   },
 
-  addSchedule: async (taskId: number, payload: CreateScheduleInput): Promise<Schedule> => {
+  addSchedule: async (taskId: number, payload: CreateScheduleInput, actorUserId?: number): Promise<Schedule> => {
     if (!payload.cronExpression?.trim()) throw new Error('Cron expression is required');
-    const createdId = await httpClient.post<number>(`/tasks/${taskId}/schedules`, {
+    const createdId = await httpClient.post<number>(withActorUserId(`/tasks/${taskId}/schedules`, actorUserId), {
       windowStart: new Date().toISOString(),
       windowEnd: null,
       cronExpression: payload.cronExpression.trim(),
@@ -302,9 +322,14 @@ export const tasksApi = {
     };
   },
 
-  updateSchedule: async (taskId: number, scheduleId: number, payload: UpdateScheduleInput): Promise<Schedule> => {
+  updateSchedule: async (
+    taskId: number,
+    scheduleId: number,
+    payload: UpdateScheduleInput,
+    actorUserId?: number,
+  ): Promise<Schedule> => {
     if (!payload.cronExpression?.trim()) throw new Error('Cron expression is required');
-    await httpClient.put<void>(`/tasks/${taskId}/schedules/${scheduleId}`, {
+    await httpClient.put<void>(withActorUserId(`/tasks/${taskId}/schedules/${scheduleId}`, actorUserId), {
       windowStart: new Date().toISOString(),
       windowEnd: null,
       cronExpression: payload.cronExpression.trim(),
@@ -323,13 +348,20 @@ export const tasksApi = {
     };
   },
 
-  deleteSchedule: async (taskId: number, scheduleId: number): Promise<{ success: boolean }> => {
-    await httpClient.delete<void>(`/tasks/${taskId}/schedules/${scheduleId}`);
+  deleteSchedule: async (taskId: number, scheduleId: number, actorUserId?: number): Promise<{ success: boolean }> => {
+    await httpClient.delete<void>(withActorUserId(`/tasks/${taskId}/schedules/${scheduleId}`, actorUserId));
     return { success: true };
   },
 
-  updateScheduleStatus: async (taskId: number, scheduleId: number, status: ScheduleStatus): Promise<Schedule> => {
-    await httpClient.patch<void>(`/tasks/${taskId}/schedules/${scheduleId}/status`, { status: fromScheduleStatus(status) });
+  updateScheduleStatus: async (
+    taskId: number,
+    scheduleId: number,
+    status: ScheduleStatus,
+    actorUserId?: number,
+  ): Promise<Schedule> => {
+    await httpClient.patch<void>(withActorUserId(`/tasks/${taskId}/schedules/${scheduleId}/status`, actorUserId), {
+      status: fromScheduleStatus(status),
+    });
     const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${taskId}/schedules`);
     const found = schedules.find((item) => item.id === scheduleId);
     if (!found) throw new Error('Schedule not found after status update');
@@ -349,12 +381,12 @@ export const tasksApi = {
     return [...new Set(tasks.map((task) => task.createdBy))];
   },
 
-  login: async (email: string, password: string): Promise<{ id: number; username: string; role: Role }> => {
+  login: async (email: string, password: string): Promise<{ id: number; username: string; role: Role; userLevel: 0 | 1 | 2 }> => {
     const response = await httpClient.post<{ id: number; name: string; email: string; userLevel: 0 | 1 | 2 }>('/auth/login', {
       email,
       password,
     });
-    return { id: response.id, username: response.email || response.name, role: toRole(response.userLevel) };
+    return { id: response.id, username: response.email || response.name, role: toRole(response.userLevel), userLevel: response.userLevel };
   },
 
   users: async (): Promise<User[]> => {
@@ -379,8 +411,17 @@ export const tasksApi = {
     return tasksApi.users();
   },
 
-  createPassword: async (email: string, password: string): Promise<void> => {
-    await httpClient.post<void>(createPasswordPath, { email, password });
+  setPasswordInitial: async (email: string, password: string): Promise<void> => {
+    await httpClient.post<void>(setPasswordInitialPath, { email, password });
+  },
+
+  changePassword: async (email: string, currentPassword: string, newPassword: string): Promise<void> => {
+    await httpClient.post<void>(changePasswordPath, { email, currentPassword, newPassword });
+  },
+
+  history: async (taskId: number): Promise<TaskHistoryEntry[]> => {
+    const items = await httpClient.get<BackendTaskHistoryEntry[]>(`/tasks/${taskId}/history`);
+    return items.sort((a, b) => +new Date(b.startedAt) - +new Date(a.startedAt));
   },
 
   deleteUser: async (userId: number): Promise<{ success: boolean }> => {

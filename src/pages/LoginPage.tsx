@@ -2,6 +2,7 @@ import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } f
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/AuthContext';
+import { isApiError } from '@/features/api/httpClient';
 
 const shouldRedirectToCreatePassword = (message: string) => {
   const normalized = message.toLowerCase();
@@ -35,6 +36,11 @@ export const LoginPage = () => {
       await login(email, password);
       navigate('/redirect', { replace: true });
     } catch (err) {
+      if (isApiError(err) && err.status === 403 && err.data?.requiresPasswordSetup) {
+        const emailForSetup = err.data.email || email;
+        navigate(`/create-password?email=${encodeURIComponent(emailForSetup)}`, { replace: true });
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Login failed';
       if (shouldRedirectToCreatePassword(message)) {
         navigate(`/create-password?email=${encodeURIComponent(email)}`, { replace: true });
@@ -70,7 +76,7 @@ export const LoginPage = () => {
               {submitting ? 'Signing in...' : 'Sign in'}
             </Button>
             <Button variant="text" onClick={() => navigate(`/create-password?email=${encodeURIComponent(email)}`)}>
-              First time user? Create password
+              First time user? Set password
             </Button>
           </Stack>
         </CardContent>

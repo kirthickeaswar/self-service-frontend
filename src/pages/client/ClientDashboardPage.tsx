@@ -101,7 +101,7 @@ export const ClientDashboardPage = () => {
                 Create Task
               </Button>
             ) : null}
-            <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/app/logs')}>
+            <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/app/audit')}>
               Audit
             </Button>
           </Stack>

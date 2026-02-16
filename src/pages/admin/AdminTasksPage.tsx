@@ -2,20 +2,21 @@ import { Alert, Button, Card, CardContent, MenuItem, Skeleton, Stack, TextField 
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/app/AuthContext';
 import { useSnackbar } from '@/app/SnackbarContext';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { PageHeader } from '@/components/common/PageHeader';
-import { logsApi } from '@/features/logs/api/logsApi';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { TasksTable } from '@/features/tasks/components/TasksTable';
 import { useTaskFilters } from '@/features/tasks/hooks/useTaskFilters';
 import { useTaskTypes } from '@/features/tasks/hooks/useTaskTypes';
-import { LogEntry, Task } from '@/types/domain';
+import { Task } from '@/types/domain';
 
 export const AdminTasksPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -30,14 +31,16 @@ export const AdminTasksPage = () => {
   const { search, setSearch, type, setType, status, setStatus, filters } = useTaskFilters();
   const { taskTypes } = useTaskTypes();
 
-  const buildPreviousRuns = (taskData: Task[], logs: LogEntry[]) => {
+  const buildPreviousRuns = async (taskData: Task[]) => {
     const result: Record<number, string | undefined> = {};
-    taskData.forEach((task) => {
-      const latest = logs
-        .filter((log) => log.taskId === task.id)
-        .sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp))[0];
-      result[task.id] = latest?.timestamp;
+
+    const historyResults = await Promise.allSettled(taskData.map((task) => tasksApi.history(task.id)));
+    historyResults.forEach((entry, index) => {
+      if (entry.status !== 'fulfilled') return;
+      const latest = entry.value[0];
+      result[taskData[index].id] = latest?.startedAt ?? latest?.createdAt;
     });
+
     return result;
   };
 
@@ -56,13 +59,13 @@ export const AdminTasksPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [taskData, creatorList, logs] = await Promise.all([
+      const [taskData, creatorList] = await Promise.all([
         tasksApi.list({ ...filters, createdBy: createdBy === 'ALL' ? undefined : createdBy }),
         tasksApi.creators(),
-        logsApi.list({}),
       ]);
+      const previousRuns = await buildPreviousRuns(taskData);
       setTasks(taskData);
-      setPreviousRunsByTask(buildPreviousRuns(taskData, logs));
+      setPreviousRunsByTask(previousRuns);
       setNextRunsByTask(buildNextRuns(taskData));
       setCreators(creatorList);
     } catch (err) {
@@ -110,7 +113,7 @@ export const AdminTasksPage = () => {
         return;
       }
 
-      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus)));
+      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus, user?.id)));
       showToast(shouldResume ? 'Task resumed' : 'Task paused', 'success');
       await load();
     } catch (err) {
@@ -120,7 +123,7 @@ export const AdminTasksPage = () => {
 
   const runTask = async (task: Task) => {
     try {
-      const result = await tasksApi.run(task.id);
+      const result = await tasksApi.run(task.id, user?.id);
       showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
       await load();
     } catch (err) {
@@ -223,7 +226,7 @@ export const AdminTasksPage = () => {
           previousRunsByTask={previousRunsByTask}
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/admin/tasks/${task.id}`)}
-          onViewHistory={(task) => navigate(`/admin/logs?taskId=${task.id}`)}
+          onViewHistory={(task) => navigate(`/admin/tasks/${task.id}/history`)}
           onRun={(task) => void runTask(task)}
           onTogglePause={(task) => void toggleStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}

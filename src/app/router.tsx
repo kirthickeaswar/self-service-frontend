@@ -4,6 +4,8 @@ import { useAuth } from '@/app/AuthContext';
 import { Role } from '@/types/domain';
 import { LoginPage } from '@/pages/LoginPage';
 import { CreatePasswordPage } from '@/pages/CreatePasswordPage';
+import { TaskHistoryPage } from '@/pages/TaskHistoryPage';
+import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
 import { ClientDashboardPage } from '@/pages/client/ClientDashboardPage';
 import { ClientTasksPage } from '@/pages/client/ClientTasksPage';
 import { ClientTaskDetailsPage } from '@/pages/client/ClientTaskDetailsPage';
@@ -47,8 +49,8 @@ export const router = createBrowserRouter([
   { path: '/client/dashboard', element: <Navigate to="/app/dashboard" replace /> },
   { path: '/client/tasks', element: <Navigate to="/app/tasks" replace /> },
   { path: '/client/create-task', element: <Navigate to="/app/create-task" replace /> },
-  { path: '/client/logs', element: <Navigate to="/app/logs" replace /> },
-  { path: '/client/troubleshoot', element: <Navigate to="/app/logs" replace /> },
+  { path: '/client/logs', element: <Navigate to="/app/audit" replace /> },
+  { path: '/client/troubleshoot', element: <Navigate to="/app/audit" replace /> },
   {
     element: <RequireAuth />,
     children: [
@@ -63,8 +65,11 @@ export const router = createBrowserRouter([
               { path: 'dashboard', element: <ClientDashboardPage /> },
               { path: 'tasks', element: <ClientTasksPage /> },
               { path: 'tasks/:taskId', element: <ClientTaskDetailsPage /> },
+              { path: 'tasks/:taskId/history', element: <TaskHistoryPage /> },
               { path: 'create-task', element: <ClientCreateTaskPage /> },
-              { path: 'logs', element: <ClientTroubleshootPage /> },
+              { path: 'audit', element: <ClientTroubleshootPage /> },
+              { path: 'logs', element: <Navigate to="/app/audit" replace /> },
+              { path: 'change-password', element: <ChangePasswordPage /> },
             ],
           },
         ],
@@ -80,10 +85,13 @@ export const router = createBrowserRouter([
               { path: 'overview', element: <AdminOverviewPage /> },
               { path: 'tasks', element: <AdminTasksPage /> },
               { path: 'tasks/:taskId', element: <ClientTaskDetailsPage /> },
+              { path: 'tasks/:taskId/history', element: <TaskHistoryPage /> },
               { path: 'create-task', element: <AdminCreateTaskPage /> },
               { path: 'task-types', element: <AdminTaskTypesPage /> },
               { path: 'users', element: <AdminUsersPage /> },
-              { path: 'logs', element: <AdminLogsPage /> },
+              { path: 'audit', element: <AdminLogsPage /> },
+              { path: 'logs', element: <Navigate to="/admin/audit" replace /> },
+              { path: 'change-password', element: <ChangePasswordPage /> },
             ],
           },
         ],

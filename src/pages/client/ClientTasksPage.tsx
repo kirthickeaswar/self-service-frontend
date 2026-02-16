@@ -85,6 +85,19 @@ export const ClientTasksPage = () => {
     }
   };
 
+  const runTask = async (task: Task) => {
+    setBusy(true);
+    try {
+      const result = await tasksApi.run(task.id);
+      showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Run failed', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const confirmDelete = async () => {
     if (!selectedToDelete) {
       return;
@@ -172,6 +185,7 @@ export const ClientTasksPage = () => {
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/app/tasks/${task.id}`)}
           onViewHistory={(task) => navigate(`/app/logs?taskId=${task.id}`)}
+          onRun={(task) => void runTask(task)}
           onTogglePause={(task) => void toggleTaskStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}
           readOnly={user?.role === 'VIEWER'}

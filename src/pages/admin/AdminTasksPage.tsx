@@ -101,6 +101,16 @@ export const AdminTasksPage = () => {
     }
   };
 
+  const runTask = async (task: Task) => {
+    try {
+      const result = await tasksApi.run(task.id);
+      showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Run failed', 'error');
+    }
+  };
+
   const deleteTask = async () => {
     if (!selectedToDelete) return;
     try {
@@ -197,6 +207,7 @@ export const AdminTasksPage = () => {
           nextRunsByTask={nextRunsByTask}
           onView={(task) => navigate(`/admin/tasks/${task.id}`)}
           onViewHistory={(task) => navigate(`/admin/logs?taskId=${task.id}`)}
+          onRun={(task) => void runTask(task)}
           onTogglePause={(task) => void toggleStatus(task)}
           onDelete={(task) => setSelectedToDelete(task)}
         />

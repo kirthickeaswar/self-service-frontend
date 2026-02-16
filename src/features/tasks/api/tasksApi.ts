@@ -56,6 +56,12 @@ interface BackendSchedule {
   createdAt?: string;
 }
 
+interface RunTaskResponse {
+  taskId: number;
+  exitCode: number;
+  outputSnippet: string;
+}
+
 const toRole = (userLevel: number): Role => {
   if (userLevel === 2) return 'ADMIN';
   if (userLevel === 1) return 'EDITOR';
@@ -268,6 +274,10 @@ export const tasksApi = {
   updateStatus: async (taskId: number, status: TaskStatus): Promise<Task> => {
     await httpClient.patch<void>(`/tasks/${taskId}/status`, { status: fromTaskStatus(status) });
     return tasksApi.getById(taskId);
+  },
+
+  run: async (taskId: number): Promise<RunTaskResponse> => {
+    return httpClient.post<RunTaskResponse>(`/tasks/${taskId}/run`, {});
   },
 
   addSchedule: async (taskId: number, payload: CreateScheduleInput): Promise<Schedule> => {

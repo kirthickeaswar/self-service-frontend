@@ -38,7 +38,7 @@ export const AdminTaskTypesPage = () => {
   const [editNameLocked, setEditNameLocked] = useState(false);
 
   const addType = async () => {
-    const type = newType.trim().toUpperCase();
+    const type = newType.trim();
     const batchFilePath = newBatchFilePath.trim();
     if (!type || !batchFilePath) return;
     try {
@@ -74,7 +74,7 @@ export const AdminTaskTypesPage = () => {
 
   const saveEdit = async () => {
     if (!editingTypeName) return;
-    const name = editTypeName.trim().toUpperCase();
+    const name = editTypeName.trim();
     const batchFilePath = editBatchFilePath.trim();
     if (!name || !batchFilePath) return;
     try {
@@ -106,12 +106,12 @@ export const AdminTaskTypesPage = () => {
 
       <Card>
         <CardContent>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
             <TextField
               fullWidth
               label="New Task Type"
               value={newType}
-              onChange={(event) => setNewType(event.target.value.toUpperCase())}
+              onChange={(event) => setNewType(event.target.value)}
               placeholder="e.g., T5"
             />
             <TextField
@@ -121,7 +121,13 @@ export const AdminTaskTypesPage = () => {
               onChange={(event) => setNewBatchFilePath(event.target.value)}
               placeholder="e.g., C:\\batch\\run_t5.bat"
             />
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => void addType()}>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AddIcon />}
+              onClick={() => void addType()}
+              sx={{ minWidth: 140, whiteSpace: 'nowrap' }}
+            >
               Add Type
             </Button>
           </Stack>
@@ -173,7 +179,7 @@ export const AdminTaskTypesPage = () => {
             <TextField
               label="Task Type Name"
               value={editTypeName}
-              onChange={(event) => setEditTypeName(event.target.value.toUpperCase())}
+              onChange={(event) => setEditTypeName(event.target.value)}
               disabled={editNameLocked}
               helperText={editNameLocked ? 'This type is already used by tasks. You can only edit batch file path.' : undefined}
               required

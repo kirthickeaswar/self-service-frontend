@@ -1,10 +1,11 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import BoltIcon from '@mui/icons-material/Bolt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import HistoryIcon from '@mui/icons-material/History';
-import { IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
+import { Button, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
 import { DataTable } from '@/components/common/DataTable';
 import { StatusChip } from '@/components/common/StatusChip';
@@ -18,6 +19,7 @@ interface TasksTableProps {
   nextRunsByTask: Record<number, string | undefined>;
   onView: (task: Task) => void;
   onViewHistory: (task: Task) => void;
+  onRun: (task: Task) => void;
   onTogglePause: (task: Task) => void;
   onDelete: (task: Task) => void;
 }
@@ -32,6 +34,7 @@ export const TasksTable = ({
   nextRunsByTask,
   onView,
   onViewHistory,
+  onRun,
   onTogglePause,
   onDelete,
 }: TasksTableProps) => {
@@ -83,6 +86,24 @@ export const TasksTable = ({
       render: (task: Task) => new Date(task.createdAt).toLocaleString(),
     },
     {
+      id: 'run',
+      label: 'Run',
+      render: (task: Task) => (
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<BoltIcon fontSize="small" />}
+          disabled={readOnly}
+          onClick={(event) => {
+            event.stopPropagation();
+            onRun(task);
+          }}
+        >
+          Run Now
+        </Button>
+      ),
+    },
+    {
       id: 'actions',
       label: 'Actions',
       render: (task: Task) => (
@@ -122,6 +143,17 @@ export const TasksTable = ({
           }}
         >
           <HistoryIcon fontSize="small" sx={{ mr: 1 }} /> View History
+        </MenuItem>
+        <MenuItem
+          disabled={readOnly}
+          onClick={() => {
+            if (selectedTask) {
+              onRun(selectedTask);
+            }
+            setAnchorEl(null);
+          }}
+        >
+          <BoltIcon fontSize="small" sx={{ mr: 1 }} /> Run Now
         </MenuItem>
         <MenuItem
           disabled={readOnly}

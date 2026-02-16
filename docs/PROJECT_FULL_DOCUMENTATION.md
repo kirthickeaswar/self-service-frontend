@@ -1,10 +1,10 @@
-# Spectrum Self-Service Frontend
+# AutoTasker Self-Service Frontend
 
-Comprehensive project documentation for the React frontend integrated with the Spectrum backend APIs.
+Comprehensive project documentation for the React frontend integrated with the AutoTasker backend APIs.
 
 ## 1. Project Overview
 
-- Project name: `spectrum-week1-frontend`
+- Project name: `autotasker-week1-frontend`
 - Purpose: UI for configuring, monitoring, running, pausing, and troubleshooting scheduled tasks.
 - Backend: C# API (no mock runtime in frontend).
 - Current base API URL: `https://localhost:7153` (from `.env`).
@@ -114,7 +114,7 @@ src/
 
 ## 5.3 Auth Layer
 
-- `AuthContext` stores logged-in user in `localStorage` (`spectrum_auth_user`).
+- `AuthContext` stores logged-in user in `localStorage` (`autotasker_auth_user`).
 - Role-based route guards in `router.tsx` enforce access.
 
 ## 6. Domain Model (Frontend)

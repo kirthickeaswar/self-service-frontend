@@ -1,4 +1,4 @@
-# Spectrum Full-Stack Architecture, Integration, and DB Schema
+# AutoTasker Full-Stack Architecture, Integration, and DB Schema
 
 This document is a deep technical reference for:
 - frontend architecture
@@ -18,7 +18,7 @@ This document is a deep technical reference for:
 
 ## 2.1 Business Goal
 
-Spectrum is a self-service scheduling platform to:
+AutoTasker is a self-service scheduling platform to:
 - define task types and batch execution paths
 - create tasks and schedules (including cron)
 - monitor status and next/previous runs

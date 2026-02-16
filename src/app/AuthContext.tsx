@@ -17,7 +17,7 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const storageKey = 'spectrum_auth_user';
+const storageKey = 'autotasker_auth_user';
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

@@ -109,7 +109,7 @@ export const LoginPage = () => {
                 <Chip size="small" label="Secure Access" variant="outlined" />
                 <Chip size="small" color="primary" label={step === 'USERNAME' ? 'Step 1 of 2' : 'Step 2 of 2'} />
               </Stack>
-              <Typography variant="h5">Spectrum Login</Typography>
+              <Typography variant="h5">AutoTasker Login</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
                 {step === 'USERNAME' ? 'Enter your email and continue to authentication.' : 'Enter your password to complete sign in.'}
               </Typography>

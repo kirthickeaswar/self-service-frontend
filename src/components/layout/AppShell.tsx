@@ -100,7 +100,7 @@ export const AppShell = () => {
         </Box>
         <Box>
           <Typography variant="subtitle1" fontWeight={700}>
-            Spectrum
+            AutoTasker
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Self-Service Utility

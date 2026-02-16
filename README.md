@@ -1,6 +1,6 @@
-# Spectrum Scheduler Frontend
+# AutoTasker Scheduler Frontend
 
-Frontend app for Spectrum task scheduling, now integrated with real backend APIs.
+Frontend app for AutoTasker task scheduling, now integrated with real backend APIs.
 
 ## Run
 

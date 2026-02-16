@@ -6,6 +6,8 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
+  Divider,
   IconButton,
   InputAdornment,
   Stack,
@@ -90,10 +92,21 @@ export const ChangePasswordPage = () => {
 
   return (
     <Box sx={{ minHeight: '100%', display: 'grid', placeItems: 'center', p: { xs: 1, md: 2 } }}>
-      <Card sx={{ width: '100%', maxWidth: 520 }}>
-        <CardContent>
-          <Stack spacing={2.5} component="form" onSubmit={submit}>
-            <Stack spacing={0.5}>
+      <Card
+        sx={{
+          width: '100%',
+          maxWidth: 540,
+          borderColor: 'rgba(148, 163, 184, 0.2)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+          <Stack spacing={2.6} component="form" onSubmit={submit}>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Chip size="small" label="Security" variant="outlined" />
+                <Chip size="small" color="primary" label="Password Update" />
+              </Stack>
               <Typography variant="h5">Change Password</Typography>
               <Typography variant="body2" color="text.secondary">
                 Update your account password securely.
@@ -176,6 +189,7 @@ export const ChangePasswordPage = () => {
               </Typography>
             </Alert>
 
+            <Divider />
             <Stack direction="row" spacing={1} justifyContent="flex-end">
               <Button variant="outlined" onClick={() => navigate(backPath)}>
                 Cancel

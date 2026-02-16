@@ -13,7 +13,7 @@ import {
   UpdateScheduleInput,
   UpdateTaskInput,
 } from '@/types/domain';
-import { httpClient } from '@/features/api/httpClient';
+import { httpClient, isApiError } from '@/features/api/httpClient';
 
 type BackendTaskStatus = 'Active' | 'Not Scheduled' | 'Deleted' | 'Error';
 type BackendScheduleStatus = 'Active' | 'Paused' | 'Deleted';
@@ -120,6 +120,96 @@ const withActorUserId = (path: string, actorUserId?: number) => {
   return `${path}${path.includes('?') ? '&' : '?'}actorUserId=${actorUserId}`;
 };
 
+const toLocalDateOnly = (value: string) => {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toLocalTime = (value: string) => {
+  const date = new Date(value);
+  return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
+};
+
+const combineLocalDateTimeToIso = (dateOnly: string, time: string) => {
+  const [hoursRaw, minutesRaw] = time.split(':');
+  const hours = Number(hoursRaw ?? '0');
+  const minutes = Number(minutesRaw ?? '0');
+  const date = new Date(`${dateOnly}T00:00:00`);
+  date.setHours(Number.isNaN(hours) ? 0 : hours, Number.isNaN(minutes) ? 0 : minutes, 0, 0);
+  return date.toISOString();
+};
+
+const toDateOnlyFromIsoOrDate = (value: string | undefined) => {
+  if (!value) return '';
+  return value.includes('T') ? value.slice(0, 10) : value;
+};
+
+const looksLikeSingleRunCron = (expression: string) => {
+  const parts = expression.trim().split(/\s+/).filter(Boolean);
+  if (parts.length !== 5) return false;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  const isSimple = (part: string) => !/[*?,/\-]/.test(part);
+  return isSimple(minute) && isSimple(hour) && isSimple(dayOfMonth) && isSimple(month) && (dayOfWeek === '*' || dayOfWeek === '?');
+};
+
+const isNonRecurringBackendSchedule = (schedule: BackendSchedule) => {
+  if (!schedule.windowEnd) return false;
+  const startMs = +new Date(schedule.windowStart);
+  const endMs = +new Date(schedule.windowEnd);
+  if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs <= startMs) return false;
+  const withinOneDay = endMs - startMs <= 24 * 60 * 60 * 1000;
+  if (!withinOneDay) return false;
+  return looksLikeSingleRunCron(schedule.cronExpression);
+};
+
+const toScheduleModel = (schedule: BackendSchedule): Schedule => {
+  const mode = isNonRecurringBackendSchedule(schedule) ? 'NON_RECURRING' : 'CRON';
+  const localDateOnly = toLocalDateOnly(schedule.windowStart);
+  return {
+    id: schedule.id,
+    taskId: schedule.taskId,
+    mode,
+    time: toLocalTime(schedule.windowStart),
+    date: mode === 'NON_RECURRING' ? `${localDateOnly}T00:00:00.000Z` : undefined,
+    cronExpression: schedule.cronExpression,
+    nextRunAt: schedule.windowStart,
+    status: toScheduleStatus(schedule.status),
+  };
+};
+
+const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleInput) => {
+  if (payload.mode === 'NON_RECURRING') {
+    const dateOnly = toDateOnlyFromIsoOrDate(payload.date);
+    if (!dateOnly) throw new Error('Date is required for non-recurring schedule');
+    if (!payload.time?.trim()) throw new Error('Time is required for non-recurring schedule');
+
+    const windowStart = combineLocalDateTimeToIso(dateOnly, payload.time);
+    const startDate = new Date(windowStart);
+    const windowEndDate = new Date(startDate);
+    windowEndDate.setMinutes(windowEndDate.getMinutes() + 1);
+
+    const cronExpression = `${startDate.getMinutes()} ${startDate.getHours()} ${startDate.getDate()} ${startDate.getMonth() + 1} *`;
+    return {
+      windowStart,
+      windowEnd: windowEndDate.toISOString(),
+      cronExpression,
+    };
+  }
+
+  if (!payload.cronExpression?.trim()) {
+    throw new Error('Cron expression is required');
+  }
+
+  return {
+    windowStart: new Date().toISOString(),
+    windowEnd: null,
+    cronExpression: payload.cronExpression.trim(),
+  };
+};
+
 const buildTask = (
   task: BackendTask,
   schedules: BackendSchedule[],
@@ -141,15 +231,7 @@ const buildTask = (
     updatedAt: task.updatedAt ?? task.createdAt,
     schedules: schedules
       .filter((item) => item.status !== 'Deleted')
-      .map((schedule) => ({
-        id: schedule.id,
-        taskId: schedule.taskId,
-        mode: 'CRON',
-        time: '00:00',
-        cronExpression: schedule.cronExpression,
-        nextRunAt: schedule.windowStart,
-        status: toScheduleStatus(schedule.status),
-      })),
+      .map((schedule) => toScheduleModel(schedule)),
   };
 };
 
@@ -228,8 +310,11 @@ export const tasksApi = {
       backendTasks = await httpClient.get<BackendTask[]>('/tasks');
     }
 
+    const filteredBackendTasks =
+      filters?.status === 'DELETED' ? backendTasks : backendTasks.filter((task) => task.status !== 'Deleted');
+
     const taskDetails = await Promise.all(
-      backendTasks.map(async (task) => {
+      filteredBackendTasks.map(async (task) => {
         const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${task.id}/schedules`);
         return buildTask(task, schedules, typeById, userById);
       }),
@@ -265,12 +350,8 @@ export const tasksApi = {
       ownerId,
       emailList: emailsToList(payload.accessEmails),
     };
-    if (payload.schedule?.mode === 'CRON' && payload.schedule.cronExpression) {
-      body.schedule = {
-        windowStart: new Date().toISOString(),
-        windowEnd: null,
-        cronExpression: payload.schedule.cronExpression,
-      };
+    if (payload.schedule) {
+      body.schedule = toBackendSchedulePayload(payload.schedule);
     }
     const id = await httpClient.post<number>('/tasks', body);
     return tasksApi.getById(id);
@@ -302,24 +383,11 @@ export const tasksApi = {
   },
 
   addSchedule: async (taskId: number, payload: CreateScheduleInput, actorUserId?: number): Promise<Schedule> => {
-    if (!payload.cronExpression?.trim()) throw new Error('Cron expression is required');
-    const createdId = await httpClient.post<number>(withActorUserId(`/tasks/${taskId}/schedules`, actorUserId), {
-      windowStart: new Date().toISOString(),
-      windowEnd: null,
-      cronExpression: payload.cronExpression.trim(),
-    });
+    const createdId = await httpClient.post<number>(withActorUserId(`/tasks/${taskId}/schedules`, actorUserId), toBackendSchedulePayload(payload));
     const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${taskId}/schedules`);
     const found = schedules.find((item) => item.id === createdId);
     if (!found) throw new Error('Schedule not found after create');
-    return {
-      id: found.id,
-      taskId: found.taskId,
-      mode: 'CRON',
-      time: '00:00',
-      cronExpression: found.cronExpression,
-      nextRunAt: found.windowStart,
-      status: toScheduleStatus(found.status),
-    };
+    return toScheduleModel(found);
   },
 
   updateSchedule: async (
@@ -328,24 +396,11 @@ export const tasksApi = {
     payload: UpdateScheduleInput,
     actorUserId?: number,
   ): Promise<Schedule> => {
-    if (!payload.cronExpression?.trim()) throw new Error('Cron expression is required');
-    await httpClient.put<void>(withActorUserId(`/tasks/${taskId}/schedules/${scheduleId}`, actorUserId), {
-      windowStart: new Date().toISOString(),
-      windowEnd: null,
-      cronExpression: payload.cronExpression.trim(),
-    });
+    await httpClient.put<void>(withActorUserId(`/tasks/${taskId}/schedules/${scheduleId}`, actorUserId), toBackendSchedulePayload(payload));
     const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${taskId}/schedules`);
     const found = schedules.find((item) => item.id === scheduleId);
     if (!found) throw new Error('Schedule not found after update');
-    return {
-      id: found.id,
-      taskId: found.taskId,
-      mode: 'CRON',
-      time: '00:00',
-      cronExpression: found.cronExpression,
-      nextRunAt: found.windowStart,
-      status: toScheduleStatus(found.status),
-    };
+    return toScheduleModel(found);
   },
 
   deleteSchedule: async (taskId: number, scheduleId: number, actorUserId?: number): Promise<{ success: boolean }> => {
@@ -365,15 +420,7 @@ export const tasksApi = {
     const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${taskId}/schedules`);
     const found = schedules.find((item) => item.id === scheduleId);
     if (!found) throw new Error('Schedule not found after status update');
-    return {
-      id: found.id,
-      taskId: found.taskId,
-      mode: 'CRON',
-      time: '00:00',
-      cronExpression: found.cronExpression,
-      nextRunAt: found.windowStart,
-      status: toScheduleStatus(found.status),
-    };
+    return toScheduleModel(found);
   },
 
   creators: async (): Promise<string[]> => {
@@ -387,6 +434,24 @@ export const tasksApi = {
       password,
     });
     return { id: response.id, username: response.email || response.name, role: toRole(response.userLevel), userLevel: response.userLevel };
+  },
+
+  probeLogin: async (email: string): Promise<'ENTER_PASSWORD' | 'SET_PASSWORD'> => {
+    const probePassword = `__probe__${Date.now()}_${Math.random().toString(36).slice(2)}__`;
+    try {
+      await tasksApi.login(email, probePassword);
+      return 'ENTER_PASSWORD';
+    } catch (error) {
+      if (isApiError(error)) {
+        if (error.status === 403 && error.data?.requiresPasswordSetup) {
+          return 'SET_PASSWORD';
+        }
+        if (error.status === 401) {
+          return 'ENTER_PASSWORD';
+        }
+      }
+      throw error;
+    }
   },
 
   users: async (): Promise<User[]> => {

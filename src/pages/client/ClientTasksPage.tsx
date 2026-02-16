@@ -177,7 +177,6 @@ export const ClientTasksPage = () => {
                 <MenuItem value="ACTIVE">ACTIVE</MenuItem>
                 <MenuItem value="ERROR">ERROR</MenuItem>
                 <MenuItem value="NOT_SCHEDULED">NOT SCHEDULED</MenuItem>
-                <MenuItem value="DELETED">DELETED</MenuItem>
               </TextField>
             </Grid>
           </Grid>

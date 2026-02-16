@@ -1,5 +1,5 @@
 import SearchIcon from '@mui/icons-material/Search';
-import { Alert, Button, Card, CardContent, MenuItem, Skeleton, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Button, Card, CardContent, List, ListItemButton, MenuItem, Skeleton, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -24,6 +24,7 @@ export const ClientTroubleshootPage = () => {
   const [loading, setLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const errorTasks = tasks.filter((task) => task.status === 'ERROR');
 
   useEffect(() => {
     const init = async () => {
@@ -75,63 +76,98 @@ export const ClientTroubleshootPage = () => {
       <PageHeader title="Audit" subtitle="Fetch and inspect audit entries for tasks." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
-      <Card>
-        <CardContent>
-          {initLoading ? (
-            <Skeleton height={100} />
-          ) : (
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 3 }}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Task"
-                  value={selectedTaskId}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setSelectedTaskId(value === '' ? '' : Number(value));
-                  }}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {tasks.map((task) => (
-                    <MenuItem key={task.id} value={task.id}>
-                      {task.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Search in audit details" value={search} onChange={(event) => setSearch(event.target.value)} />
-              </Grid>
-              <Grid size={{ xs: 12, md: 2.5 }}>
-                <TextField
-                  fullWidth
-                  label="From"
-                  type="date"
-                  value={from}
-                  onChange={(event) => setFrom(event.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 2.5 }}>
-                <TextField
-                  fullWidth
-                  label="To"
-                  type="date"
-                  value={to}
-                  onChange={(event) => setTo(event.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Button variant="contained" startIcon={<SearchIcon />} onClick={() => void fetchLogs()} disabled={loading}>
-                  Fetch Audit
-                </Button>
-              </Grid>
-            </Grid>
-          )}
-        </CardContent>
-      </Card>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, lg: 8.5 }}>
+          <Card>
+            <CardContent>
+              {initLoading ? (
+                <Skeleton height={100} />
+              ) : (
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 3 }}>
+                    <TextField
+                      fullWidth
+                      select
+                      label="Task"
+                      value={selectedTaskId}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setSelectedTaskId(value === '' ? '' : Number(value));
+                      }}
+                    >
+                      <MenuItem value="">All</MenuItem>
+                      {tasks.map((task) => (
+                        <MenuItem key={task.id} value={task.id}>
+                          {task.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <TextField fullWidth label="Search in audit details" value={search} onChange={(event) => setSearch(event.target.value)} />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 2.5 }}>
+                    <TextField
+                      fullWidth
+                      label="From"
+                      type="date"
+                      value={from}
+                      onChange={(event) => setFrom(event.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 2.5 }}>
+                    <TextField
+                      fullWidth
+                      label="To"
+                      type="date"
+                      value={to}
+                      onChange={(event) => setTo(event.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Button variant="contained" startIcon={<SearchIcon />} onClick={() => void fetchLogs()} disabled={loading}>
+                      Fetch Audit
+                    </Button>
+                  </Grid>
+                </Grid>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid size={{ xs: 12, lg: 3.5 }}>
+          <Card>
+            <CardContent sx={{ py: 1.2 }}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                Troubleshoot Sidebar
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Error tasks
+              </Typography>
+              <List disablePadding sx={{ mt: 1 }}>
+                {errorTasks.length === 0 ? (
+                  <Typography variant="caption" color="text.secondary">
+                    No tasks in error state.
+                  </Typography>
+                ) : (
+                  errorTasks.map((task) => (
+                    <ListItemButton
+                      key={task.id}
+                      dense
+                      selected={selectedTaskId === task.id}
+                      onClick={() => setSelectedTaskId(task.id)}
+                      sx={{ borderRadius: 1, mb: 0.4, py: 0.4 }}
+                    >
+                      <Typography variant="caption">{task.name}</Typography>
+                    </ListItemButton>
+                  ))
+                )}
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       <Stack spacing={1.5}>
         <Typography variant="h6">Audit Stream</Typography>
@@ -146,7 +182,12 @@ export const ClientTroubleshootPage = () => {
         ) : logs.length === 0 ? (
           <EmptyState title="No audit entries found" subtitle="Choose filters and fetch audit data." />
         ) : (
-          <LogsTable logs={logs} userEmailById={userEmailById} taskNameById={Object.fromEntries(tasks.map((task) => [task.id, task.name]))} />
+          <LogsTable
+            logs={logs}
+            userEmailById={userEmailById}
+            taskNameById={Object.fromEntries(tasks.map((task) => [task.id, task.name]))}
+            taskTypeByTaskId={Object.fromEntries(tasks.map((task) => [task.id, task.type]))}
+          />
         )}
       </Stack>
     </Stack>

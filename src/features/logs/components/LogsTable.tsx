@@ -1,6 +1,7 @@
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
+  Chip,
   Box,
   Collapse,
   IconButton,
@@ -21,9 +22,10 @@ interface LogsTableProps {
   logs: LogEntry[];
   userEmailById: Record<number, string>;
   taskNameById: Record<number, string>;
+  taskTypeByTaskId: Record<number, string>;
 }
 
-export const LogsTable = ({ logs, userEmailById, taskNameById }: LogsTableProps) => {
+export const LogsTable = ({ logs, userEmailById, taskNameById, taskTypeByTaskId }: LogsTableProps) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -43,6 +45,8 @@ export const LogsTable = ({ logs, userEmailById, taskNameById }: LogsTableProps)
               <TableCell>Timestamp</TableCell>
               <TableCell>User Email</TableCell>
               <TableCell>Task</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -54,8 +58,8 @@ export const LogsTable = ({ logs, userEmailById, taskNameById }: LogsTableProps)
                   sx={{
                     cursor: 'pointer',
                     '& .MuiTableCell-root': {
-                      py: 0.45,
-                      px: 1.2,
+                      py: 0.3,
+                      px: 1,
                     },
                   }}
                 >
@@ -67,17 +71,15 @@ export const LogsTable = ({ logs, userEmailById, taskNameById }: LogsTableProps)
                   <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
                   <TableCell>{(log.userId && userEmailById[log.userId]) || `User #${log.userId ?? '-'}`}</TableCell>
                   <TableCell>{taskNameById[log.taskId] ?? `Task #${log.taskId}`}</TableCell>
+                  <TableCell>{taskTypeByTaskId[log.taskId] ?? 'N/A'}</TableCell>
+                  <TableCell>
+                    <Chip size="small" label={log.action ?? '-'} variant="outlined" />
+                  </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell colSpan={4} sx={{ py: 0, px: 0, borderBottom: expandedId === log.id ? '1px solid' : 'none', borderColor: 'divider' }}>
+                  <TableCell colSpan={6} sx={{ py: 0, px: 0, borderBottom: expandedId === log.id ? '1px solid' : 'none', borderColor: 'divider' }}>
                     <Collapse in={expandedId === log.id} timeout="auto" unmountOnExit>
                       <Box sx={{ px: 2, py: 1.2, backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                          Action
-                        </Typography>
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          {log.action ?? log.message ?? '-'}
-                        </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                           Details
                         </Typography>

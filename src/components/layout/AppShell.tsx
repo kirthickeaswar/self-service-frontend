@@ -23,9 +23,11 @@ import {
   Typography,
 } from '@mui/material';
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/app/AuthContext';
+import { tasksApi } from '@/features/tasks/api/tasksApi';
+import { Task } from '@/types/domain';
 
 const drawerWidth = 260;
 
@@ -69,6 +71,7 @@ const roleLabelMap = {
 export const AppShell = () => {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [errorTasks, setErrorTasks] = useState<Task[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -77,6 +80,24 @@ export const AppShell = () => {
     if (user?.role === 'EDITOR') return editorLinks;
     return viewerLinks;
   }, [user?.role]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadErrorTasks = async () => {
+      try {
+        const items = await tasksApi.list();
+        if (!mounted) return;
+        setErrorTasks(items.filter((item) => item.status === 'ERROR').slice(0, 12));
+      } catch {
+        if (!mounted) return;
+        setErrorTasks([]);
+      }
+    };
+    void loadErrorTasks();
+    return () => {
+      mounted = false;
+    };
+  }, [location.pathname]);
 
   const drawerContent = (
     <Box sx={{ px: 2, py: 2 }}>
@@ -127,6 +148,43 @@ export const AppShell = () => {
             </ListItemButton>
           );
         })}
+      </List>
+
+      <Divider sx={{ my: 1.5 }} />
+      <Typography variant="caption" color="text.secondary" sx={{ px: 1, mb: 1, display: 'block' }}>
+        Troubleshoot Sidebar
+      </Typography>
+      <List disablePadding>
+        {errorTasks.length === 0 ? (
+          <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+            No tasks in error state
+          </Typography>
+        ) : (
+          errorTasks.map((task) => {
+            const basePath = user?.role === 'ADMIN' ? '/admin/audit' : '/app/audit';
+            const path = `${basePath}?taskId=${task.id}`;
+            const selected = location.pathname === basePath && new URLSearchParams(location.search).get('taskId') === String(task.id);
+            return (
+              <ListItemButton
+                key={task.id}
+                dense
+                selected={selected}
+                onClick={() => {
+                  navigate(path);
+                  setMobileOpen(false);
+                }}
+                sx={{ mb: 0.5, borderRadius: 2 }}
+              >
+                <ListItemText
+                  primary={task.name}
+                  secondary="Error"
+                  primaryTypographyProps={{ variant: 'caption' }}
+                  secondaryTypographyProps={{ variant: 'caption' }}
+                />
+              </ListItemButton>
+            );
+          })
+        )}
       </List>
     </Box>
   );

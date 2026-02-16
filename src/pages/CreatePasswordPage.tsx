@@ -6,6 +6,8 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
+  Divider,
   IconButton,
   InputAdornment,
   Stack,
@@ -77,10 +79,21 @@ export const CreatePasswordPage = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', p: 2 }}>
-      <Card sx={{ width: '100%', maxWidth: 460 }}>
-        <CardContent>
-          <Stack spacing={2.5} component="form" onSubmit={submit}>
-            <Stack spacing={0.5}>
+      <Card
+        sx={{
+          width: '100%',
+          maxWidth: 500,
+          borderColor: 'rgba(148, 163, 184, 0.2)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+          <Stack spacing={2.6} component="form" onSubmit={submit}>
+            <Stack spacing={1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Chip size="small" label="Initial Setup" variant="outlined" />
+                <Chip size="small" color="primary" label="Password Setup" />
+              </Stack>
               <Typography variant="h5">Create Password</Typography>
               <Typography variant="body2" color="text.secondary">
                 First-time sign in: set a secure password for your account.
@@ -142,9 +155,10 @@ export const CreatePasswordPage = () => {
               </Typography>
             </Alert>
 
-            <Button type="submit" variant="contained" disabled={submitting || !canSubmit}>
+            <Button type="submit" variant="contained" size="large" fullWidth disabled={submitting || !canSubmit}>
               {submitting ? 'Setting...' : 'Set Password'}
             </Button>
+            <Divider />
             <Button component={RouterLink} to="/login" variant="text">
               Back to Sign In
             </Button>

@@ -15,6 +15,7 @@ export const ClientTroubleshootPage = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [userEmailById, setUserEmailById] = useState<Record<number, string>>({});
   const [selectedTaskId, setSelectedTaskId] = useState<number | ''>('');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -28,8 +29,9 @@ export const ClientTroubleshootPage = () => {
     const init = async () => {
       setInitLoading(true);
       try {
-        const items = await tasksApi.list();
+        const [items, users] = await Promise.all([tasksApi.list(), tasksApi.users()]);
         setTasks(items);
+        setUserEmailById(Object.fromEntries(users.map((user) => [user.id, user.email])));
         const presetTaskId = searchParams.get('taskId');
         if (presetTaskId) {
           const parsed = Number(presetTaskId);
@@ -55,10 +57,10 @@ export const ClientTroubleshootPage = () => {
         to: to ? new Date(to).toISOString() : undefined,
       });
       setLogs(data);
-      showToast(`Fetched ${data.length} logs`, 'success');
+      showToast(`Fetched ${data.length} audit entries`, 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Log fetch failed');
-      showToast('Unable to fetch logs', 'error');
+      setError(err instanceof Error ? err.message : 'Audit fetch failed');
+      showToast('Unable to fetch audit entries', 'error');
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export const ClientTroubleshootPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Logs" subtitle="Fetch and inspect task logs." />
+      <PageHeader title="Audit" subtitle="Fetch and inspect audit entries for tasks." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
@@ -99,7 +101,7 @@ export const ClientTroubleshootPage = () => {
                 </TextField>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Search in Action/Body" value={search} onChange={(event) => setSearch(event.target.value)} />
+                <TextField fullWidth label="Search in audit details" value={search} onChange={(event) => setSearch(event.target.value)} />
               </Grid>
               <Grid size={{ xs: 12, md: 2.5 }}>
                 <TextField
@@ -123,7 +125,7 @@ export const ClientTroubleshootPage = () => {
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <Button variant="contained" startIcon={<SearchIcon />} onClick={() => void fetchLogs()} disabled={loading}>
-                  Fetch Logs
+                  Fetch Audit
                 </Button>
               </Grid>
             </Grid>
@@ -132,7 +134,7 @@ export const ClientTroubleshootPage = () => {
       </Card>
 
       <Stack spacing={1.5}>
-        <Typography variant="h6">Logs Viewer</Typography>
+        <Typography variant="h6">Audit Stream</Typography>
         {loading ? (
           <Card>
             <CardContent>
@@ -142,9 +144,9 @@ export const ClientTroubleshootPage = () => {
             </CardContent>
           </Card>
         ) : logs.length === 0 ? (
-          <EmptyState title="No logs found" subtitle="Choose filters and fetch logs to inspect run details." />
+          <EmptyState title="No audit entries found" subtitle="Choose filters and fetch audit data." />
         ) : (
-          <LogsTable logs={logs} />
+          <LogsTable logs={logs} userEmailById={userEmailById} taskNameById={Object.fromEntries(tasks.map((task) => [task.id, task.name]))} />
         )}
       </Stack>
     </Stack>

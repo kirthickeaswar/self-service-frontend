@@ -74,12 +74,28 @@ export const ClientTasksPage = () => {
   const toggleTaskStatus = async (task: Task) => {
     setBusy(true);
     try {
-      const nextStatus = task.status === 'NOT_SCHEDULED' ? 'ACTIVE' : 'NOT_SCHEDULED';
-      await tasksApi.updateStatus(task.id, nextStatus);
-      showToast(`Task ${nextStatus === 'ACTIVE' ? 'activated' : 'set to not scheduled'}`, 'success');
+      const schedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
+      if (schedules.length === 0) {
+        showToast('Not Scheduled', 'info');
+        return;
+      }
+
+      const shouldResume = schedules.every((schedule) => schedule.status === 'PAUSED');
+      const targetStatus = shouldResume ? 'SCHEDULED' : 'PAUSED';
+      const toUpdate = shouldResume
+        ? schedules.filter((schedule) => schedule.status === 'PAUSED')
+        : schedules.filter((schedule) => schedule.status === 'SCHEDULED');
+
+      if (toUpdate.length === 0) {
+        showToast(shouldResume ? 'Nothing to resume' : 'Nothing to pause', 'info');
+        return;
+      }
+
+      await Promise.all(toUpdate.map((schedule) => tasksApi.updateScheduleStatus(task.id, schedule.id, targetStatus)));
+      showToast(shouldResume ? 'Task resumed' : 'Task paused', 'success');
       await load();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Unable to update task', 'error');
+      showToast(err instanceof Error ? err.message : 'Unable to update task schedules', 'error');
     } finally {
       setBusy(false);
     }

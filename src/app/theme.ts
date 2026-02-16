@@ -74,5 +74,30 @@ export const appTheme = createTheme({
         },
       },
     },
+    MuiButton: {
+      defaultProps: {
+        disableElevation: true,
+      },
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 600,
+          borderRadius: 10,
+          paddingInline: 14,
+          transition: 'transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease',
+        },
+        contained: {
+          boxShadow: '0 8px 18px rgba(46, 83, 124, 0.28)',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 10px 24px rgba(46, 83, 124, 0.34)',
+          },
+        },
+        outlined: {
+          borderColor: 'rgba(148, 163, 184, 0.35)',
+          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+        },
+      },
+    },
   },
 });

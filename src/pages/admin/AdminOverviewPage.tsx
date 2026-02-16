@@ -37,6 +37,7 @@ export const AdminOverviewPage = () => {
       activeTasks: tasks.filter((task) => task.status === 'ACTIVE').length,
       pausedTasks: tasks.filter((task) => task.status === 'PAUSED').length,
       errorTasks: tasks.filter((task) => task.status === 'ERROR').length,
+      notScheduledTasks: tasks.filter((task) => task.status === 'NOT_SCHEDULED').length,
       failedSchedules: schedules.filter((schedule) => schedule.status === 'FAILED').length,
     };
   }, [tasks]);
@@ -57,8 +58,9 @@ export const AdminOverviewPage = () => {
           ['Active', metrics.activeTasks],
           ['Paused', metrics.pausedTasks],
           ['Errors', metrics.errorTasks],
+          ['Not Scheduled', metrics.notScheduledTasks],
         ].map(([label, value]) => (
-          <Grid key={label} size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid key={label} size={{ xs: 12, sm: 6, lg: 2.4 }}>
             <Card>
               <CardContent>
                 <Typography variant="body2" color="text.secondary">

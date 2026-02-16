@@ -37,14 +37,14 @@ interface MenuLink {
 const viewerLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
-  { label: 'Logs', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 
 const editorLinks: MenuLink[] = [
   { label: 'Dashboard', path: '/app/dashboard', icon: <DashboardIcon fontSize="small" /> },
   { label: 'Tasks', path: '/app/tasks', icon: <AssignmentIcon fontSize="small" /> },
   { label: 'Create Task', path: '/app/create-task', icon: <AddTaskIcon fontSize="small" /> },
-  { label: 'Logs', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/app/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
 
 const adminLinks: MenuLink[] = [
@@ -53,8 +53,14 @@ const adminLinks: MenuLink[] = [
   { label: 'Create Task', path: '/admin/create-task', icon: <AddTaskIcon fontSize="small" /> },
   { label: 'Task Types', path: '/admin/task-types', icon: <CategoryIcon fontSize="small" /> },
   { label: 'Users', path: '/admin/users', icon: <GroupIcon fontSize="small" /> },
-  { label: 'Logs', path: '/admin/logs', icon: <DescriptionIcon fontSize="small" /> },
+  { label: 'Audit', path: '/admin/logs', icon: <DescriptionIcon fontSize="small" /> },
 ];
+
+const roleLabelMap = {
+  VIEWER: 'Viewer',
+  EDITOR: 'Editor',
+  ADMIN: 'Admin',
+} as const;
 
 export const AppShell = () => {
   const { user, logout } = useAuth();
@@ -147,7 +153,7 @@ export const AppShell = () => {
 
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="caption" color="text.secondary">
-              {user?.username} ({user?.role})
+              {user?.username} ({user?.role ? roleLabelMap[user.role] : ''})
             </Typography>
             <Button
               size="small"

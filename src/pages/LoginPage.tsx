@@ -1,12 +1,24 @@
 import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/AuthContext';
+
+const shouldRedirectToCreatePassword = (message: string) => {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('password not set') ||
+    normalized.includes('create password') ||
+    normalized.includes('set password') ||
+    normalized.includes('first login') ||
+    normalized.includes('initial password')
+  );
+};
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(searchParams.get('email') ?? '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -23,7 +35,12 @@ export const LoginPage = () => {
       await login(email, password);
       navigate('/redirect', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const message = err instanceof Error ? err.message : 'Login failed';
+      if (shouldRedirectToCreatePassword(message)) {
+        navigate(`/create-password?email=${encodeURIComponent(email)}`, { replace: true });
+        return;
+      }
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -51,6 +68,9 @@ export const LoginPage = () => {
             />
             <Button type="submit" variant="contained" disabled={submitting}>
               {submitting ? 'Signing in...' : 'Sign in'}
+            </Button>
+            <Button variant="text" onClick={() => navigate(`/create-password?email=${encodeURIComponent(email)}`)}>
+              First time user? Create password
             </Button>
           </Stack>
         </CardContent>

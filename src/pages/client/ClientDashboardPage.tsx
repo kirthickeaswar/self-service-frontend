@@ -40,6 +40,7 @@ export const ClientDashboardPage = () => {
       active: tasks.filter((task) => task.status === 'ACTIVE').length,
       paused: tasks.filter((task) => task.status === 'PAUSED').length,
       error: tasks.filter((task) => task.status === 'ERROR').length,
+      notScheduled: tasks.filter((task) => task.status === 'NOT_SCHEDULED').length,
     };
   }, [tasks]);
 
@@ -69,8 +70,8 @@ export const ClientDashboardPage = () => {
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Grid container spacing={2}>
-        {['Total Tasks', 'Active', 'Paused', 'Errors'].map((title, index) => (
-          <Grid key={title} size={{ xs: 12, sm: 6, lg: 3 }}>
+        {['Total Tasks', 'Active', 'Paused', 'Errors', 'Not Scheduled'].map((title, index) => (
+          <Grid key={title} size={{ xs: 12, sm: 6, lg: 2.4 }}>
             <Card>
               <CardContent>
                 <Typography variant="body2" color="text.secondary">
@@ -79,7 +80,9 @@ export const ClientDashboardPage = () => {
                 {loading ? (
                   <Skeleton width={80} height={36} />
                 ) : (
-                  <Typography variant="h5">{[summary.total, summary.active, summary.paused, summary.error][index]}</Typography>
+                  <Typography variant="h5">
+                    {[summary.total, summary.active, summary.paused, summary.error, summary.notScheduled][index]}
+                  </Typography>
                 )}
               </CardContent>
             </Card>
@@ -99,7 +102,7 @@ export const ClientDashboardPage = () => {
               </Button>
             ) : null}
             <Button startIcon={<DescriptionIcon />} variant="outlined" onClick={() => navigate('/app/logs')}>
-              Logs
+              Audit
             </Button>
           </Stack>
         </CardContent>

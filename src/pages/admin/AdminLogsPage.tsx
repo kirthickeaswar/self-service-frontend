@@ -15,6 +15,7 @@ export const AdminLogsPage = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [userEmailById, setUserEmailById] = useState<Record<number, string>>({});
   const [taskId, setTaskId] = useState<number | ''>('');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -28,8 +29,9 @@ export const AdminLogsPage = () => {
     const init = async () => {
       try {
         setInitLoading(true);
-        const allTasks = await tasksApi.list();
+        const [allTasks, users] = await Promise.all([tasksApi.list(), tasksApi.users()]);
         setTasks(allTasks);
+        setUserEmailById(Object.fromEntries(users.map((user) => [user.id, user.email])));
         const presetTaskId = searchParams.get('taskId');
         if (presetTaskId) {
           const parsed = Number(presetTaskId);
@@ -55,10 +57,10 @@ export const AdminLogsPage = () => {
         to: to ? new Date(to).toISOString() : undefined,
       });
       setLogs(items);
-      showToast(`Fetched ${items.length} logs`, 'success');
+      showToast(`Fetched ${items.length} audit entries`, 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to fetch logs');
-      showToast('Log fetch failed', 'error');
+      setError(err instanceof Error ? err.message : 'Unable to fetch audit entries');
+      showToast('Audit fetch failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export const AdminLogsPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Admin Logs" subtitle="Centralized log stream across all tasks." />
+      <PageHeader title="Admin Audit" subtitle="Centralized audit stream across all tasks." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
@@ -99,7 +101,7 @@ export const AdminLogsPage = () => {
                 </TextField>
               </Grid>
               <Grid size={{ xs: 12, md: 4 }}>
-                <TextField fullWidth label="Search in Action/Body" value={search} onChange={(event) => setSearch(event.target.value)} />
+                <TextField fullWidth label="Search in audit details" value={search} onChange={(event) => setSearch(event.target.value)} />
               </Grid>
               <Grid size={{ xs: 12, md: 2.5 }}>
                 <TextField
@@ -123,7 +125,7 @@ export const AdminLogsPage = () => {
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <Button variant="contained" startIcon={<SearchIcon />} onClick={() => void fetchLogs()} disabled={loading}>
-                  Fetch Logs
+                  Fetch Audit
                 </Button>
               </Grid>
             </Grid>
@@ -132,7 +134,7 @@ export const AdminLogsPage = () => {
       </Card>
 
       <Stack spacing={1.5}>
-        <Typography variant="h6">Log Stream</Typography>
+        <Typography variant="h6">Audit Stream</Typography>
         {loading ? (
           <Card>
             <CardContent>
@@ -142,9 +144,9 @@ export const AdminLogsPage = () => {
             </CardContent>
           </Card>
         ) : logs.length === 0 ? (
-          <EmptyState title="No logs loaded" subtitle="Run a log query using the filters above." />
+          <EmptyState title="No audit entries loaded" subtitle="Run an audit query using the filters above." />
         ) : (
-          <LogsTable logs={logs} />
+          <LogsTable logs={logs} userEmailById={userEmailById} taskNameById={Object.fromEntries(tasks.map((task) => [task.id, task.name]))} />
         )}
       </Stack>
     </Stack>

@@ -1,4 +1,5 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import { Alert, Button, Card, CardContent, IconButton, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useSnackbar } from '@/app/SnackbarContext';
@@ -9,6 +10,11 @@ import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { Role, User } from '@/types/domain';
 
 const roleOptions: Role[] = ['VIEWER', 'EDITOR', 'ADMIN'];
+const roleLabelMap: Record<Role, string> = {
+  VIEWER: 'Viewer',
+  EDITOR: 'Editor',
+  ADMIN: 'Admin',
+};
 
 export const AdminUsersPage = () => {
   const { showToast } = useSnackbar();
@@ -17,7 +23,6 @@ export const AdminUsersPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('VIEWER');
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
@@ -40,10 +45,9 @@ export const AdminUsersPage = () => {
 
   const addUser = async () => {
     try {
-      await tasksApi.createUser({ name, email, password, role });
+      await tasksApi.createUser({ name, email, role });
       setName('');
       setEmail('');
-      setPassword('');
       setRole('VIEWER');
       await load();
       showToast('User created', 'success');
@@ -66,7 +70,7 @@ export const AdminUsersPage = () => {
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Manage Users" subtitle="Create or delete users. Role updates are handled by backend for now." />
+      <PageHeader title="Manage Users" subtitle="Create or delete users. New users will create their password at first login." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
@@ -74,18 +78,18 @@ export const AdminUsersPage = () => {
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
             <TextField label="Name" value={name} onChange={(event) => setName(event.target.value)} />
             <TextField label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-            <TextField label="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
             <TextField select label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)}>
               {roleOptions.map((option) => (
                 <MenuItem key={option} value={option}>
-                  {option}
+                  {roleLabelMap[option]}
                 </MenuItem>
               ))}
             </TextField>
             <Button
               variant="contained"
+              startIcon={<PersonAddAlt1Icon />}
               onClick={() => void addUser()}
-              disabled={!name.trim() || !email.trim() || !password.trim()}
+              disabled={!name.trim() || !email.trim()}
             >
               Add User
             </Button>
@@ -107,7 +111,7 @@ export const AdminUsersPage = () => {
               {
                 id: 'role',
                 label: 'Role',
-                render: (user: User) => user.role,
+                render: (user: User) => roleLabelMap[user.role],
               },
               {
                 id: 'actions',

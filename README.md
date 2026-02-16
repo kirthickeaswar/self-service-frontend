@@ -69,3 +69,10 @@ npm run build
 
 - Detailed React learning guide:
   - `/Users/kirthick21/Desktop/Sprint-Frontend/docs/REACT_LEARNING_GUIDE.md`
+
+## Full Project Documentation
+
+- Comprehensive project documentation:
+  - `/Users/kirthick21/Desktop/Sprint-Frontend/docs/PROJECT_FULL_DOCUMENTATION.md`
+- Detailed full-stack architecture, integration, and database schema:
+  - `/Users/kirthick21/Desktop/Sprint-Frontend/docs/FULLSTACK_ARCHITECTURE_INTEGRATION_DB.md`

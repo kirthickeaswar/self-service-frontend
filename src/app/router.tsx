@@ -3,6 +3,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/app/AuthContext';
 import { Role } from '@/types/domain';
 import { LoginPage } from '@/pages/LoginPage';
+import { CreatePasswordPage } from '@/pages/CreatePasswordPage';
 import { ClientDashboardPage } from '@/pages/client/ClientDashboardPage';
 import { ClientTasksPage } from '@/pages/client/ClientTasksPage';
 import { ClientTaskDetailsPage } from '@/pages/client/ClientTaskDetailsPage';
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <RedirectByRole /> },
   { path: '/redirect', element: <RedirectByRole /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/create-password', element: <CreatePasswordPage /> },
   { path: '/client/dashboard', element: <Navigate to="/app/dashboard" replace /> },
   { path: '/client/tasks', element: <Navigate to="/app/tasks" replace /> },
   { path: '/client/create-task', element: <Navigate to="/app/create-task" replace /> },

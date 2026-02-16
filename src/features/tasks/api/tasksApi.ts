@@ -137,6 +137,7 @@ const buildTask = (
 
 const readTaskTypes = async () => httpClient.get<BackendTaskType[]>('/tasktypes');
 const readUsers = async () => httpClient.get<BackendUser[]>('/users');
+const createPasswordPath = import.meta.env.VITE_CREATE_PASSWORD_PATH ?? '/auth/create-password';
 
 const resolveTaskTypeId = async (title: string) => {
   const types = await readTaskTypes();
@@ -368,15 +369,18 @@ export const tasksApi = {
     }));
   },
 
-  createUser: async (payload: { name: string; email: string; password: string; role: Role }): Promise<User[]> => {
+  createUser: async (payload: { name: string; email: string; role: Role }): Promise<User[]> => {
     const userLevel: 0 | 1 | 2 = payload.role === 'ADMIN' ? 2 : payload.role === 'EDITOR' ? 1 : 0;
     await httpClient.post<number>('/users', {
       name: payload.name,
       email: payload.email,
-      password: payload.password,
       userLevel,
     });
     return tasksApi.users();
+  },
+
+  createPassword: async (email: string, password: string): Promise<void> => {
+    await httpClient.post<void>(createPasswordPath, { email, password });
   },
 
   deleteUser: async (userId: number): Promise<{ success: boolean }> => {

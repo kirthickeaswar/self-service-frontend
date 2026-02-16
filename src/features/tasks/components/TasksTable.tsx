@@ -40,6 +40,8 @@ export const TasksTable = ({
 }: TasksTableProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const hasSchedules = Boolean(selectedTask?.schedules.length);
+  const isPaused = hasSchedules ? selectedTask!.schedules.every((schedule) => schedule.status === 'PAUSED') : false;
 
   const columns = [
     {
@@ -148,28 +150,17 @@ export const TasksTable = ({
           disabled={readOnly}
           onClick={() => {
             if (selectedTask) {
-              onRun(selectedTask);
-            }
-            setAnchorEl(null);
-          }}
-        >
-          <BoltIcon fontSize="small" sx={{ mr: 1 }} /> Run Now
-        </MenuItem>
-        <MenuItem
-          disabled={readOnly}
-          onClick={() => {
-            if (selectedTask) {
               onTogglePause(selectedTask);
             }
             setAnchorEl(null);
           }}
         >
-          {selectedTask?.status === 'NOT_SCHEDULED' ? (
+          {isPaused ? (
             <PlayCircleOutlineIcon fontSize="small" sx={{ mr: 1 }} />
           ) : (
             <PauseCircleOutlineIcon fontSize="small" sx={{ mr: 1 }} />
           )}
-          {selectedTask?.status === 'NOT_SCHEDULED' ? 'Activate Task' : 'Set Not Scheduled'}
+          {isPaused ? 'Resume' : 'Pause'}
         </MenuItem>
         <MenuItem
           disabled={readOnly}

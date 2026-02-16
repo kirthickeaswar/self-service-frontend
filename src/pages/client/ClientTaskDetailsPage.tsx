@@ -1,4 +1,5 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import BoltIcon from '@mui/icons-material/Bolt';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
@@ -71,6 +72,7 @@ export const ClientTaskDetailsPage = () => {
   const [taskType, setTaskType] = useState<TaskType>('T1');
   const [scheduleToEdit, setScheduleToEdit] = useState<Schedule | null>(null);
   const [editScheduleInput, setEditScheduleInput] = useState<CreateScheduleInput>(defaultSchedule);
+  const [runningTask, setRunningTask] = useState(false);
 
   const load = async () => {
     if (!taskId || Number.isNaN(taskIdNumber)) return;
@@ -175,6 +177,20 @@ export const ClientTaskDetailsPage = () => {
     }
   };
 
+  const runTaskNow = async () => {
+    if (!task) return;
+    setRunningTask(true);
+    try {
+      const result = await tasksApi.run(task.id);
+      showToast(`Task ran (exit code ${result.exitCode})`, result.exitCode === 0 ? 'success' : 'warning');
+      await load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Run failed', 'error');
+    } finally {
+      setRunningTask(false);
+    }
+  };
+
   if (loading) {
     return (
       <Stack spacing={2}>
@@ -193,6 +209,11 @@ export const ClientTaskDetailsPage = () => {
         subtitle="Inspect and control schedules for this task."
         actions={
           <Stack direction="row" spacing={1}>
+            {canEdit ? (
+              <Button variant="contained" startIcon={<BoltIcon />} disabled={runningTask} onClick={() => void runTaskNow()}>
+                {runningTask ? 'Running...' : 'Run Now'}
+              </Button>
+            ) : null}
             {canEdit ? (
               <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={openTaskEdit}>
                 Edit Task

@@ -112,7 +112,7 @@ export const AdminTaskTypesPage = () => {
               label="New Task Type"
               value={newType}
               onChange={(event) => setNewType(event.target.value)}
-              placeholder="e.g., T5"
+              placeholder="e.g., Report Generation"
             />
             <TextField
               fullWidth

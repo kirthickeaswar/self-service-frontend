@@ -52,6 +52,29 @@ export const appTheme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#161d28',
+          backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.12) 100%)',
+          border: '1px solid rgba(148, 163, 184, 0.16)',
+          boxShadow: '0 14px 36px rgba(0, 0, 0, 0.45)',
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.045)',
+          },
+          '&.Mui-focused': {
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          },
+        },
+      },
+    },
     MuiDrawer: {
       styleOverrides: {
         paper: {

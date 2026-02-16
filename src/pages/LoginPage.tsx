@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, CardContent, Chip, Divider, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, Stack, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/AuthContext';
@@ -97,20 +97,18 @@ export const LoginPage = () => {
               </Stack>
               <Typography variant="h5">Spectrum Login</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
-                {step === 'USERNAME'
-                  ? 'Enter your username and continue to authentication.'
-                  : 'Enter your password to complete sign in.'}
+                {step === 'USERNAME' ? 'Enter your email and continue to authentication.' : 'Enter your password to complete sign in.'}
               </Typography>
             </Stack>
             {error ? <Alert severity="error">{error}</Alert> : null}
             <TextField
-              label="Username"
-              type="text"
+              label="Email"
+              type="email"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               required
               InputProps={{ readOnly: step === 'PASSWORD' }}
-              helperText={step === 'PASSWORD' ? 'Use Back to change username.' : 'Use your registered email/username.'}
+              helperText={step === 'PASSWORD' ? 'Use Back to change email.' : 'Use your registered email.'}
             />
             {step === 'PASSWORD' ? (
               <>
@@ -149,10 +147,6 @@ export const LoginPage = () => {
                 {submitting ? 'Checking...' : 'Next'}
               </Button>
             )}
-            <Divider />
-            <Button variant="text" onClick={() => navigate(`/create-password?email=${encodeURIComponent(username.trim())}`)}>
-              First time user? Set password
-            </Button>
           </Stack>
         </CardContent>
       </Card>

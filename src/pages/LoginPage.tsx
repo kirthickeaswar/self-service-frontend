@@ -36,6 +36,16 @@ export const LoginPage = () => {
     setError(null);
     setSubmitting(true);
     try {
+      try {
+        const exists = await tasksApi.userExistsByEmail(normalized);
+        if (!exists) {
+          setError('User does not exist. Please contact admin.');
+          return;
+        }
+      } catch {
+        // If users endpoint is unavailable before auth, continue with login probe fallback.
+      }
+
       const stage = await tasksApi.probeLogin(normalized);
       if (stage === 'SET_PASSWORD') {
         navigate(`/create-password?email=${encodeURIComponent(normalized)}`, { replace: true });

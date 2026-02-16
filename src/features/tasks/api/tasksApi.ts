@@ -475,6 +475,13 @@ export const tasksApi = {
     }));
   },
 
+  userExistsByEmail: async (email: string): Promise<boolean> => {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) return false;
+    const users = await readUsers();
+    return users.some((item) => item.email.trim().toLowerCase() === normalized);
+  },
+
   createUser: async (payload: { name: string; email: string; role: Role }): Promise<User[]> => {
     const userLevel: 0 | 1 | 2 = payload.role === 'ADMIN' ? 2 : payload.role === 'EDITOR' ? 1 : 0;
     await httpClient.post<number>('/users', {

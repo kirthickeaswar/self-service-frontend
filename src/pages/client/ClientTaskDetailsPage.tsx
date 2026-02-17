@@ -45,7 +45,7 @@ import { CreateScheduleInput, Schedule, Task, TaskType } from '@/types/domain';
 const defaultSchedule: CreateScheduleInput = {
   mode: 'CRON',
   time: '00:00',
-  cronExpression: '0 0 * * * *',
+  cronExpression: '0 * * * *',
 };
 
 export const ClientTaskDetailsPage = () => {
@@ -162,7 +162,7 @@ export const ClientTaskDetailsPage = () => {
     setEditScheduleInput({
       mode: schedule.mode === 'RECURRING' ? 'CRON' : schedule.mode,
       time: schedule.time,
-      cronExpression: schedule.mode === 'CRON' ? schedule.cronExpression : '0 0 * * * *',
+      cronExpression: schedule.mode === 'CRON' ? schedule.cronExpression : '0 * * * *',
       date: schedule.date,
     });
   };

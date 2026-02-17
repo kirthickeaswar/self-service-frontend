@@ -176,6 +176,7 @@ const nextRecurringRunAt = (schedule: CreateScheduleInput, reference: Date) => {
 };
 
 interface CronParts {
+  seconds: Set<number>;
   minutes: Set<number>;
   hours: Set<number>;
   daysOfMonth: Set<number>;
@@ -309,13 +310,15 @@ const parseCronExpression = (expression: string): CronParts => {
     .split(/\s+/)
     .filter(Boolean);
 
-  if (fields.length !== 5) {
-    throw new Error('Cron expression must have 5 fields: minute hour day-of-month month day-of-week');
+  if (fields.length !== 5 && fields.length !== 6) {
+    throw new Error('Cron expression must have 6 fields: second minute hour day-of-month month day-of-week (legacy 5-field also accepted)');
   }
 
-  const [minuteField, hourField, domField, monthField, dowField] = fields;
+  const [secondField, minuteField, hourField, domField, monthField, dowField] =
+    fields.length === 6 ? fields : ['0', fields[0], fields[1], fields[2], fields[3], fields[4]];
 
   return {
+    seconds: parseCronField(secondField, 0, 59, undefined, 'generic'),
     minutes: parseCronField(minuteField, 0, 59, undefined, 'generic'),
     hours: parseCronField(hourField, 0, 23, undefined, 'generic'),
     daysOfMonth: parseCronField(domField, 1, 31, undefined, 'generic'),
@@ -327,13 +330,14 @@ const parseCronExpression = (expression: string): CronParts => {
 };
 
 const matchesCron = (date: Date, parts: CronParts) => {
+  const second = date.getSeconds();
   const minute = date.getMinutes();
   const hour = date.getHours();
   const dayOfMonth = date.getDate();
   const month = date.getMonth() + 1;
   const dayOfWeek = date.getDay();
 
-  if (!parts.minutes.has(minute) || !parts.hours.has(hour) || !parts.months.has(month)) {
+  if (!parts.seconds.has(second) || !parts.minutes.has(minute) || !parts.hours.has(hour) || !parts.months.has(month)) {
     return false;
   }
 
@@ -355,15 +359,22 @@ const matchesCron = (date: Date, parts: CronParts) => {
 const nextCronRunAt = (expression: string, reference: Date) => {
   const parts = parseCronExpression(expression);
   const candidate = new Date(reference);
-  candidate.setSeconds(0, 0);
-  candidate.setMinutes(candidate.getMinutes() + 1);
+  candidate.setMilliseconds(0);
+  candidate.setSeconds(candidate.getSeconds() + 1);
+  const sortedSeconds = [...parts.seconds].sort((a, b) => a - b);
 
-  const maxChecks = 60 * 24 * 365 * 3;
-  for (let i = 0; i < maxChecks; i += 1) {
-    if (matchesCron(candidate, parts)) {
-      return candidate.toISOString();
+  const maxMinuteChecks = 60 * 24 * 365 * 3;
+  for (let i = 0; i < maxMinuteChecks; i += 1) {
+    const minSecond = candidate.getSeconds();
+    const nextSecond = sortedSeconds.find((value) => value >= minSecond);
+    if (nextSecond !== undefined) {
+      const withSecond = new Date(candidate);
+      withSecond.setSeconds(nextSecond, 0);
+      if (matchesCron(withSecond, parts)) {
+        return withSecond.toISOString();
+      }
     }
-    candidate.setMinutes(candidate.getMinutes() + 1);
+    candidate.setMinutes(candidate.getMinutes() + 1, 0, 0);
   }
   throw new Error('Unable to determine next run for cron expression');
 };

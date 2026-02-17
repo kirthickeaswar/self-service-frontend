@@ -192,12 +192,30 @@ const toDateOnlyFromIsoOrDate = (value: string | undefined) => {
   return value.includes('T') ? value.slice(0, 10) : value;
 };
 
+const normalizeCronExpression = (expression: string) => {
+  const fields = expression
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (fields.length === 6) return fields.join(' ');
+  if (fields.length === 5) return `0 ${fields.join(' ')}`;
+  return expression.trim();
+};
+
 const looksLikeSingleRunCron = (expression: string) => {
   const parts = expression.trim().split(/\s+/).filter(Boolean);
-  if (parts.length !== 5) return false;
-  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  if (parts.length !== 5 && parts.length !== 6) return false;
+  const [second, minute, hour, dayOfMonth, month, dayOfWeek] =
+    parts.length === 6 ? parts : ['0', parts[0], parts[1], parts[2], parts[3], parts[4]];
   const isSimple = (part: string) => !/[*?,/\-]/.test(part);
-  return isSimple(minute) && isSimple(hour) && isSimple(dayOfMonth) && isSimple(month) && (dayOfWeek === '*' || dayOfWeek === '?');
+  return (
+    isSimple(second) &&
+    isSimple(minute) &&
+    isSimple(hour) &&
+    isSimple(dayOfMonth) &&
+    isSimple(month) &&
+    (dayOfWeek === '*' || dayOfWeek === '?')
+  );
 };
 
 const isNonRecurringBackendSchedule = (schedule: BackendSchedule) => {
@@ -240,7 +258,7 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
     const month = Number(monthRaw ?? '1');
     const day = Number(dayRaw ?? '1');
 
-    const cronExpression = `${minutes} ${hours} ${Number.isNaN(day) ? 1 : day} ${Number.isNaN(month) ? 1 : month} *`;
+    const cronExpression = `0 ${minutes} ${hours} ${Number.isNaN(day) ? 1 : day} ${Number.isNaN(month) ? 1 : month} *`;
     return {
       windowStart,
       windowEnd: toKolkataIsoFromInstant(windowEndDate),
@@ -255,7 +273,7 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
   return {
     windowStart: toKolkataIsoFromInstant(new Date()),
     windowEnd: null,
-    cronExpression: payload.cronExpression.trim(),
+    cronExpression: normalizeCronExpression(payload.cronExpression),
   };
 };
 

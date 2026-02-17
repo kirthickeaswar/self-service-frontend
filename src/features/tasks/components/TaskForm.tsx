@@ -14,7 +14,7 @@ interface TaskFormProps {
 const defaultSchedule: CreateScheduleInput = {
   mode: 'CRON',
   time: '00:00',
-  cronExpression: '0 * * * *',
+  cronExpression: '0 0 * * * *',
 };
 
 export const TaskForm = ({ createdBy, submitting, onSubmit }: TaskFormProps) => {

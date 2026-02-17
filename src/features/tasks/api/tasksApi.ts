@@ -120,26 +120,71 @@ const withActorUserId = (path: string, actorUserId?: number) => {
   return `${path}${path.includes('?') ? '&' : '?'}actorUserId=${actorUserId}`;
 };
 
-const toLocalDateOnly = (value: string) => {
+const KOLKATA_TIME_ZONE = 'Asia/Kolkata';
+const KOLKATA_OFFSET_MINUTES = 5 * 60 + 30;
+
+const pad2 = (value: number) => `${value}`.padStart(2, '0');
+
+const toKolkataDateParts = (value: string) => {
   const date = new Date(value);
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
+  if (Number.isNaN(date.getTime())) {
+    return { year: '1970', month: '01', day: '01', hour: '00', minute: '00' };
+  }
+
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: KOLKATA_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour: get('hour'),
+    minute: get('minute'),
+  };
+};
+
+const toKolkataDateOnly = (value: string) => {
+  const { year, month, day } = toKolkataDateParts(value);
   return `${year}-${month}-${day}`;
 };
 
-const toLocalTime = (value: string) => {
-  const date = new Date(value);
-  return `${`${date.getHours()}`.padStart(2, '0')}:${`${date.getMinutes()}`.padStart(2, '0')}`;
+const toKolkataTime = (value: string) => {
+  const { hour, minute } = toKolkataDateParts(value);
+  return `${hour}:${minute}`;
 };
 
-const combineLocalDateTimeToIso = (dateOnly: string, time: string) => {
+const parseTime = (time: string) => {
   const [hoursRaw, minutesRaw] = time.split(':');
   const hours = Number(hoursRaw ?? '0');
   const minutes = Number(minutesRaw ?? '0');
-  const date = new Date(`${dateOnly}T00:00:00`);
-  date.setHours(Number.isNaN(hours) ? 0 : hours, Number.isNaN(minutes) ? 0 : minutes, 0, 0);
-  return date.toISOString();
+  return {
+    hours: Number.isNaN(hours) ? 0 : Math.max(0, Math.min(23, hours)),
+    minutes: Number.isNaN(minutes) ? 0 : Math.max(0, Math.min(59, minutes)),
+  };
+};
+
+const toKolkataIsoFromInstant = (date: Date) => {
+  const shifted = new Date(date.getTime() + KOLKATA_OFFSET_MINUTES * 60_000);
+  const year = shifted.getUTCFullYear();
+  const month = pad2(shifted.getUTCMonth() + 1);
+  const day = pad2(shifted.getUTCDate());
+  const hour = pad2(shifted.getUTCHours());
+  const minute = pad2(shifted.getUTCMinutes());
+  const second = pad2(shifted.getUTCSeconds());
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}+05:30`;
+};
+
+const combineKolkataDateTimeToIso = (dateOnly: string, time: string) => {
+  const { hours, minutes } = parseTime(time);
+  return `${dateOnly}T${pad2(hours)}:${pad2(minutes)}:00+05:30`;
 };
 
 const toDateOnlyFromIsoOrDate = (value: string | undefined) => {
@@ -167,13 +212,13 @@ const isNonRecurringBackendSchedule = (schedule: BackendSchedule) => {
 
 const toScheduleModel = (schedule: BackendSchedule): Schedule => {
   const mode = isNonRecurringBackendSchedule(schedule) ? 'NON_RECURRING' : 'CRON';
-  const localDateOnly = toLocalDateOnly(schedule.windowStart);
+  const kolkataDateOnly = toKolkataDateOnly(schedule.windowStart);
   return {
     id: schedule.id,
     taskId: schedule.taskId,
     mode,
-    time: toLocalTime(schedule.windowStart),
-    date: mode === 'NON_RECURRING' ? `${localDateOnly}T00:00:00.000Z` : undefined,
+    time: toKolkataTime(schedule.windowStart),
+    date: mode === 'NON_RECURRING' ? `${kolkataDateOnly}T00:00:00.000Z` : undefined,
     cronExpression: schedule.cronExpression,
     nextRunAt: schedule.windowStart,
     status: toScheduleStatus(schedule.status),
@@ -186,15 +231,19 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
     if (!dateOnly) throw new Error('Date is required for non-recurring schedule');
     if (!payload.time?.trim()) throw new Error('Time is required for non-recurring schedule');
 
-    const windowStart = combineLocalDateTimeToIso(dateOnly, payload.time);
+    const { hours, minutes } = parseTime(payload.time);
+    const windowStart = combineKolkataDateTimeToIso(dateOnly, payload.time);
     const startDate = new Date(windowStart);
     const windowEndDate = new Date(startDate);
     windowEndDate.setMinutes(windowEndDate.getMinutes() + 1);
+    const [, monthRaw, dayRaw] = dateOnly.split('-');
+    const month = Number(monthRaw ?? '1');
+    const day = Number(dayRaw ?? '1');
 
-    const cronExpression = `${startDate.getMinutes()} ${startDate.getHours()} ${startDate.getDate()} ${startDate.getMonth() + 1} *`;
+    const cronExpression = `${minutes} ${hours} ${Number.isNaN(day) ? 1 : day} ${Number.isNaN(month) ? 1 : month} *`;
     return {
       windowStart,
-      windowEnd: windowEndDate.toISOString(),
+      windowEnd: toKolkataIsoFromInstant(windowEndDate),
       cronExpression,
     };
   }
@@ -204,7 +253,7 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
   }
 
   return {
-    windowStart: new Date().toISOString(),
+    windowStart: toKolkataIsoFromInstant(new Date()),
     windowEnd: null,
     cronExpression: payload.cronExpression.trim(),
   };

@@ -21,6 +21,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -400,63 +401,65 @@ export const ClientTaskDetailsPage = () => {
           {task.schedules.length === 0 ? (
             <EmptyState title="No schedules yet" subtitle="Add a schedule to start execution." />
           ) : (
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Mode</TableCell>
-                  <TableCell>Time</TableCell>
-                  <TableCell>Frequency / Date</TableCell>
-                  <TableCell>Next Run</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {task.schedules.map((schedule) => (
-                  <TableRow key={schedule.id} hover>
-                    <TableCell>{schedule.mode === 'NON_RECURRING' ? 'NON_RECURRING' : 'RECURRING'}</TableCell>
-                    <TableCell>{schedule.mode === 'NON_RECURRING' ? formatTimeDisplay(schedule.time) : 'From expression'}</TableCell>
-                    <TableCell>{schedule.mode === 'NON_RECURRING' ? formatDateDisplay(schedule.date) : schedule.cronExpression ?? 'N/A'}</TableCell>
-                    <TableCell>{schedule.mode === 'NON_RECURRING' ? 'N/A' : new Date(schedule.nextRunAt).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <StatusChip status={schedule.status} />
-                    </TableCell>
-                    <TableCell>
-                      {canEdit ? (
-                        <>
-                          <IconButton
-                            onClick={() => openScheduleEdit(schedule)}
-                            disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
-                          >
-                            <EditOutlinedIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => void toggleSchedule(schedule)}
-                            disabled={
-                              addingSchedule ||
-                              savingScheduleEdit ||
-                              deletingSchedule ||
-                              deletingTask ||
-                              updatingTaskPause ||
-                              togglingScheduleId !== null
-                            }
-                          >
-                            {schedule.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => setScheduleToDelete(schedule)}
-                            disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </>
-                      ) : null}
-                    </TableCell>
+            <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Mode</TableCell>
+                    <TableCell>Time</TableCell>
+                    <TableCell>Frequency / Date</TableCell>
+                    <TableCell>Next Run</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {task.schedules.map((schedule) => (
+                    <TableRow key={schedule.id} hover>
+                      <TableCell>{schedule.mode === 'NON_RECURRING' ? 'NON_RECURRING' : 'RECURRING'}</TableCell>
+                      <TableCell>{schedule.mode === 'NON_RECURRING' ? formatTimeDisplay(schedule.time) : 'From expression'}</TableCell>
+                      <TableCell>{schedule.mode === 'NON_RECURRING' ? formatDateDisplay(schedule.date) : schedule.cronExpression ?? 'N/A'}</TableCell>
+                      <TableCell>{schedule.mode === 'NON_RECURRING' ? 'N/A' : new Date(schedule.nextRunAt).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <StatusChip status={schedule.status} />
+                      </TableCell>
+                      <TableCell>
+                        {canEdit ? (
+                          <>
+                            <IconButton
+                              onClick={() => openScheduleEdit(schedule)}
+                              disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                            >
+                              <EditOutlinedIcon />
+                            </IconButton>
+                            <IconButton
+                              onClick={() => void toggleSchedule(schedule)}
+                              disabled={
+                                addingSchedule ||
+                                savingScheduleEdit ||
+                                deletingSchedule ||
+                                deletingTask ||
+                                updatingTaskPause ||
+                                togglingScheduleId !== null
+                              }
+                            >
+                              {schedule.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() => setScheduleToDelete(schedule)}
+                              disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                            >
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          </>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </CardContent>
       </Card>

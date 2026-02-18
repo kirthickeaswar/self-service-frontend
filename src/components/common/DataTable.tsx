@@ -16,7 +16,7 @@ interface DataTableProps<T> {
 
 export const DataTable = <T,>({ columns, rows, rowKey, onRowClick }: DataTableProps<T>) => {
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} sx={{ width: '100%', maxWidth: '100%', overflowX: 'auto' }}>
       <Table>
         <TableHead>
           <TableRow>

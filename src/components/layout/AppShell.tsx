@@ -136,7 +136,7 @@ export const AppShell = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', width: '100%', maxWidth: '100%', minHeight: '100vh', overflowX: 'hidden' }}>
       <AppBar
         color="transparent"
         position="fixed"
@@ -203,7 +203,7 @@ export const AppShell = () => {
         </Drawer>
       </Box>
 
-      <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, mt: 8, minWidth: 0 }}>
+      <Box component="main" sx={{ flexGrow: 1, width: '100%', maxWidth: '100%', p: { xs: 2, md: 3 }, mt: 8, minWidth: 0, overflowX: 'hidden' }}>
         <Outlet />
       </Box>
     </Box>

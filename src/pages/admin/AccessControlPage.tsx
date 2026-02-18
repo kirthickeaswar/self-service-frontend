@@ -1,5 +1,5 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Card, CardContent, Chip, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Card, CardContent, Chip, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { PageHeader } from '@/components/common/PageHeader';
 
 const modules = [
@@ -29,24 +29,26 @@ export const AccessControlPage = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Admin and Client roles are controlled by mock role switcher in the top bar.
           </Typography>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Module</TableCell>
-                <TableCell>Admin</TableCell>
-                <TableCell>Client</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {modules.map((item) => (
-                <TableRow key={item.module} hover>
-                  <TableCell>{item.module}</TableCell>
-                  <TableCell>{renderAccess(item.admin)}</TableCell>
-                  <TableCell>{renderAccess(item.client)}</TableCell>
+          <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Module</TableCell>
+                  <TableCell>Admin</TableCell>
+                  <TableCell>Client</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {modules.map((item) => (
+                  <TableRow key={item.module} hover>
+                    <TableCell>{item.module}</TableCell>
+                    <TableCell>{renderAccess(item.admin)}</TableCell>
+                    <TableCell>{renderAccess(item.client)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </CardContent>
       </Card>
     </Stack>

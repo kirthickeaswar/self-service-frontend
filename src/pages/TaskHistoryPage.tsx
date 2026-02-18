@@ -1,5 +1,5 @@
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { Alert, Button, Card, CardContent, Chip, Skeleton, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
+import { Alert, Button, Card, CardContent, Chip, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -124,36 +124,38 @@ export const TaskHistoryPage = () => {
               <EmptyState title="No history yet" subtitle="Run this task to generate execution history." />
             </Stack>
           ) : (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Started At</TableCell>
-                  <TableCell>Finished At</TableCell>
-                  <TableCell>Duration</TableCell>
-                  <TableCell>Exit Code</TableCell>
-                  <TableCell>Output Snippet</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {history.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell>
-                      <Chip size="small" color={historyStatusColor(item.status)} label={item.status} />
-                    </TableCell>
-                    <TableCell>{formatDateTime(item.startedAt)}</TableCell>
-                    <TableCell>{formatDateTime(item.finishedAt)}</TableCell>
-                    <TableCell>{formatDuration(item.startedAt, item.finishedAt)}</TableCell>
-                    <TableCell>{item.exitCode ?? 'N/A'}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ maxWidth: 520, whiteSpace: 'pre-wrap' }}>
-                        {item.outputSnippet || '-'}
-                      </Typography>
-                    </TableCell>
+            <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Started At</TableCell>
+                    <TableCell>Finished At</TableCell>
+                    <TableCell>Duration</TableCell>
+                    <TableCell>Exit Code</TableCell>
+                    <TableCell>Output Snippet</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {history.map((item) => (
+                    <TableRow key={item.id} hover>
+                      <TableCell>
+                        <Chip size="small" color={historyStatusColor(item.status)} label={item.status} />
+                      </TableCell>
+                      <TableCell>{formatDateTime(item.startedAt)}</TableCell>
+                      <TableCell>{formatDateTime(item.finishedAt)}</TableCell>
+                      <TableCell>{formatDuration(item.startedAt, item.finishedAt)}</TableCell>
+                      <TableCell>{item.exitCode ?? 'N/A'}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ maxWidth: 520, whiteSpace: 'pre-wrap' }}>
+                          {item.outputSnippet || '-'}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
         </CardContent>
       </Card>

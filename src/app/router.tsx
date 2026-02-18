@@ -11,12 +11,12 @@ import { ClientDashboardPage } from '@/pages/client/ClientDashboardPage';
 import { ClientTasksPage } from '@/pages/client/ClientTasksPage';
 import { ClientTaskDetailsPage } from '@/pages/client/ClientTaskDetailsPage';
 import { ClientCreateTaskPage } from '@/pages/client/ClientCreateTaskPage';
-import { ClientTroubleshootPage } from '@/pages/client/ClientTroubleshootPage';
+import { ClientAuditPage } from '@/pages/client/ClientAuditPage';
 import { AdminOverviewPage } from '@/pages/admin/AdminOverviewPage';
 import { AdminTasksPage } from '@/pages/admin/AdminTasksPage';
 import { AdminCreateTaskPage } from '@/pages/admin/AdminCreateTaskPage';
 import { AdminTaskTypesPage } from '@/pages/admin/AdminTaskTypesPage';
-import { AdminLogsPage } from '@/pages/admin/AdminLogsPage';
+import { AdminAuditPage } from '@/pages/admin/AdminAuditPage';
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
 
 const RequireAuth = () => {
@@ -68,7 +68,7 @@ export const router = createBrowserRouter([
               { path: 'tasks/:taskId', element: <ClientTaskDetailsPage /> },
               { path: 'tasks/:taskId/history', element: <TaskHistoryPage /> },
               { path: 'create-task', element: <ClientCreateTaskPage /> },
-              { path: 'audit', element: <ClientTroubleshootPage /> },
+              { path: 'audit', element: <ClientAuditPage /> },
               { path: 'troubleshoot', element: <TroubleshootPage /> },
               { path: 'logs', element: <Navigate to="/app/audit" replace /> },
               { path: 'change-password', element: <ChangePasswordPage /> },
@@ -91,7 +91,7 @@ export const router = createBrowserRouter([
               { path: 'create-task', element: <AdminCreateTaskPage /> },
               { path: 'task-types', element: <AdminTaskTypesPage /> },
               { path: 'users', element: <AdminUsersPage /> },
-              { path: 'audit', element: <AdminLogsPage /> },
+              { path: 'audit', element: <AdminAuditPage /> },
               { path: 'troubleshoot', element: <TroubleshootPage /> },
               { path: 'logs', element: <Navigate to="/admin/audit" replace /> },
               { path: 'change-password', element: <ChangePasswordPage /> },

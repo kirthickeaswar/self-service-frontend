@@ -43,7 +43,6 @@ export const AdminUsersPage = () => {
   const { user } = useAuth();
   const { showToast } = useSnackbar();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -56,15 +55,12 @@ export const AdminUsersPage = () => {
   const isEmailValid = emailRegex.test(normalizedEmail);
 
   const load = async () => {
-    setLoading(true);
     setError(null);
     try {
       const data = await tasksApi.users();
       setUsers(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load users');
-    } finally {
-      setLoading(false);
     }
   };
 

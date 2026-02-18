@@ -11,12 +11,12 @@ import { LogsTable } from '@/features/logs/components/LogsTable';
 import { tasksApi } from '@/features/tasks/api/tasksApi';
 import { LogEntry, Task } from '@/types/domain';
 
-export const ClientTroubleshootPage = () => {
+export const AdminAuditPage = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [userNameById, setUserNameById] = useState<Record<number, string>>({});
-  const [selectedTaskId, setSelectedTaskId] = useState<number | ''>('');
+  const [taskId, setTaskId] = useState<number | ''>('');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -27,15 +27,15 @@ export const ClientTroubleshootPage = () => {
 
   useEffect(() => {
     const init = async () => {
-      setInitLoading(true);
       try {
-        const [items, users] = await Promise.all([tasksApi.list(), tasksApi.users()]);
-        setTasks(items);
+        setInitLoading(true);
+        const [allTasks, users] = await Promise.all([tasksApi.list(), tasksApi.users()]);
+        setTasks(allTasks);
         setUserNameById(Object.fromEntries(users.map((user) => [user.id, user.name])));
         const presetTaskId = searchParams.get('taskId');
         if (presetTaskId) {
           const parsed = Number(presetTaskId);
-          if (!Number.isNaN(parsed)) setSelectedTaskId(parsed);
+          if (!Number.isNaN(parsed)) setTaskId(parsed);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unable to load tasks');
@@ -50,29 +50,29 @@ export const ClientTroubleshootPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await logsApi.list({
-        taskId: selectedTaskId || undefined,
+      const items = await logsApi.list({
+        taskId: taskId || undefined,
         search,
         from: from ? new Date(from).toISOString() : undefined,
         to: to ? new Date(to).toISOString() : undefined,
       });
-      setLogs(data);
-      showToast(`Fetched ${data.length} audit entries`, 'success');
+      setLogs(items);
+      showToast(`Fetched ${items.length} audit entries`, 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Audit fetch failed');
-      showToast('Unable to fetch audit entries', 'error');
+      setError(err instanceof Error ? err.message : 'Unable to fetch audit entries');
+      showToast('Audit fetch failed', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!initLoading && selectedTaskId !== '') void fetchLogs();
-  }, [initLoading, selectedTaskId]);
+    if (!initLoading && taskId !== '') void fetchLogs();
+  }, [initLoading, taskId]);
 
   return (
     <Stack spacing={3}>
-      <PageHeader title="Audit" subtitle="Fetch and inspect audit entries for tasks." />
+      <PageHeader title="Admin Audit" subtitle="Centralized audit stream across all tasks." />
       {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
@@ -86,10 +86,10 @@ export const ClientTroubleshootPage = () => {
                   fullWidth
                   select
                   label="Task"
-                  value={selectedTaskId}
+                  value={taskId}
                   onChange={(event) => {
                     const value = event.target.value;
-                    setSelectedTaskId(value === '' ? '' : Number(value));
+                    setTaskId(value === '' ? '' : Number(value));
                   }}
                 >
                   <MenuItem value="">All</MenuItem>
@@ -144,7 +144,7 @@ export const ClientTroubleshootPage = () => {
             </CardContent>
           </Card>
         ) : logs.length === 0 ? (
-          <EmptyState title="No audit entries found" subtitle="Choose filters and fetch audit data." />
+          <EmptyState title="No audit entries loaded" subtitle="Run an audit query using the filters above." />
         ) : (
           <LogsTable
             logs={logs}

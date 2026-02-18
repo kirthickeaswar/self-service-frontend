@@ -20,12 +20,12 @@ import { LogEntry } from '@/types/domain';
 
 interface LogsTableProps {
   logs: LogEntry[];
-  userEmailById: Record<number, string>;
+  userNameById: Record<number, string>;
   taskNameById: Record<number, string>;
   taskTypeByTaskId: Record<number, string>;
 }
 
-export const LogsTable = ({ logs, userEmailById, taskNameById, taskTypeByTaskId }: LogsTableProps) => {
+export const LogsTable = ({ logs, userNameById, taskNameById, taskTypeByTaskId }: LogsTableProps) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -43,7 +43,7 @@ export const LogsTable = ({ logs, userEmailById, taskNameById, taskTypeByTaskId 
             <TableRow>
               <TableCell sx={{ width: 48 }} />
               <TableCell>Timestamp</TableCell>
-              <TableCell>User Email</TableCell>
+              <TableCell>User Name</TableCell>
               <TableCell>Task</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Action</TableCell>
@@ -69,7 +69,7 @@ export const LogsTable = ({ logs, userEmailById, taskNameById, taskTypeByTaskId 
                     </IconButton>
                   </TableCell>
                   <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                  <TableCell>{(log.userId && userEmailById[log.userId]) || `User #${log.userId ?? '-'}`}</TableCell>
+                  <TableCell>{(log.userId && userNameById[log.userId]) || `User #${log.userId ?? '-'}`}</TableCell>
                   <TableCell>{taskNameById[log.taskId] ?? `Task #${log.taskId}`}</TableCell>
                   <TableCell>{taskTypeByTaskId[log.taskId] ?? 'N/A'}</TableCell>
                   <TableCell>

@@ -1,6 +1,27 @@
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { Alert, Button, Card, CardContent, Chip, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Collapse,
+  IconButton,
+  Skeleton,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -23,7 +44,7 @@ const formatDuration = (startedAt: string, finishedAt?: string | null) => {
 const historyStatusColor = (status: string): 'default' | 'success' | 'error' | 'warning' | 'info' => {
   const normalized = status.toLowerCase();
   if (normalized === 'success') return 'success';
-  if (normalized === 'failed' || normalized === 'canceled') return 'error';
+  if (normalized === 'failed' || normalized === 'canceled' || normalized === 'cancelled') return 'error';
   if (normalized === 'running') return 'warning';
   if (normalized === 'queued') return 'info';
   return 'default';
@@ -41,6 +62,9 @@ export const TaskHistoryPage = () => {
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [expandedHistoryId, setExpandedHistoryId] = useState<number | null>(null);
 
   const load = async () => {
     if (!taskId || Number.isNaN(taskIdNumber)) return;
@@ -62,6 +86,29 @@ export const TaskHistoryPage = () => {
   }, [taskId]);
 
   const latestRun = useMemo(() => history[0], [history]);
+
+  const filteredHistory = useMemo(() => {
+    return history.filter((entry) => {
+      const startedAtMs = new Date(entry.startedAt).getTime();
+      if (Number.isNaN(startedAtMs)) return false;
+
+      if (fromDate) {
+        const fromMs = new Date(`${fromDate}T00:00:00`).getTime();
+        if (startedAtMs < fromMs) return false;
+      }
+
+      if (toDate) {
+        const toMs = new Date(`${toDate}T23:59:59.999`).getTime();
+        if (startedAtMs > toMs) return false;
+      }
+
+      return true;
+    });
+  }, [history, fromDate, toDate]);
+
+  useEffect(() => {
+    setExpandedHistoryId((current) => (filteredHistory.some((item) => item.id === current) ? current : null));
+  }, [filteredHistory]);
 
   return (
     <Stack spacing={3}>
@@ -112,6 +159,43 @@ export const TaskHistoryPage = () => {
       </Card>
 
       <Card>
+        <CardContent>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', sm: 'center' }}>
+            <TextField
+              type="date"
+              label="From"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <TextField
+              type="date"
+              label="To"
+              value={toDate}
+              onChange={(event) => setToDate(event.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <Button
+              variant="text"
+              onClick={() => {
+                setFromDate('');
+                setToDate('');
+                setExpandedHistoryId(null);
+              }}
+              disabled={!fromDate && !toDate}
+            >
+              Clear Filter
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ ml: { sm: 'auto' } }}>
+              Showing {filteredHistory.length} of {history.length} runs
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardContent sx={{ p: 0 }}>
           {loading ? (
             <Stack spacing={1} sx={{ p: 2 }}>
@@ -119,15 +203,19 @@ export const TaskHistoryPage = () => {
               <Skeleton height={34} />
               <Skeleton height={34} />
             </Stack>
-          ) : history.length === 0 ? (
+          ) : filteredHistory.length === 0 ? (
             <Stack sx={{ p: 2 }}>
-              <EmptyState title="No history yet" subtitle="Run this task to generate execution history." />
+              <EmptyState
+                title={history.length === 0 ? 'No history yet' : 'No matching runs'}
+                subtitle={history.length === 0 ? 'Run this task to generate execution history.' : 'Try adjusting the date filters.'}
+              />
             </Stack>
           ) : (
             <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
+                    <TableCell sx={{ width: 48 }} />
                     <TableCell>Status</TableCell>
                     <TableCell>Started At</TableCell>
                     <TableCell>Finished At</TableCell>
@@ -137,21 +225,51 @@ export const TaskHistoryPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {history.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        <Chip size="small" color={historyStatusColor(item.status)} label={item.status} />
-                      </TableCell>
-                      <TableCell>{formatDateTime(item.startedAt)}</TableCell>
-                      <TableCell>{formatDateTime(item.finishedAt)}</TableCell>
-                      <TableCell>{formatDuration(item.startedAt, item.finishedAt)}</TableCell>
-                      <TableCell>{item.exitCode ?? 'N/A'}</TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ maxWidth: 520, whiteSpace: 'pre-wrap' }}>
-                          {item.outputSnippet || '-'}
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
+                  {filteredHistory.map((item) => (
+                    <Fragment key={item.id}>
+                      <TableRow
+                        hover
+                        onClick={() => setExpandedHistoryId((current) => (current === item.id ? null : item.id))}
+                        sx={{
+                          cursor: 'pointer',
+                          '& .MuiTableCell-root': {
+                            py: 0.5,
+                            px: 1,
+                          },
+                        }}
+                      >
+                        <TableCell>
+                          <IconButton size="small">
+                            {expandedHistoryId === item.id ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                          </IconButton>
+                        </TableCell>
+                        <TableCell>
+                          <Chip size="small" color={historyStatusColor(item.status)} label={item.status} />
+                        </TableCell>
+                        <TableCell>{formatDateTime(item.startedAt)}</TableCell>
+                        <TableCell>{formatDateTime(item.finishedAt)}</TableCell>
+                        <TableCell>{formatDuration(item.startedAt, item.finishedAt)}</TableCell>
+                        <TableCell>{item.exitCode ?? 'N/A'}</TableCell>
+                        <TableCell>{item.outputSnippet ? 'View output' : 'N/A'}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          sx={{ py: 0, px: 0, borderBottom: expandedHistoryId === item.id ? '1px solid' : 'none', borderColor: 'divider' }}
+                        >
+                          <Collapse in={expandedHistoryId === item.id} timeout="auto" unmountOnExit>
+                            <Box sx={{ px: 2, py: 1.2, backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                                Output Snippet
+                              </Typography>
+                              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                                {item.outputSnippet || '-'}
+                              </Typography>
+                            </Box>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

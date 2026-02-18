@@ -15,7 +15,7 @@ export const ClientTroubleshootPage = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useSnackbar();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [userEmailById, setUserEmailById] = useState<Record<number, string>>({});
+  const [userNameById, setUserNameById] = useState<Record<number, string>>({});
   const [selectedTaskId, setSelectedTaskId] = useState<number | ''>('');
   const [search, setSearch] = useState('');
   const [from, setFrom] = useState('');
@@ -31,7 +31,7 @@ export const ClientTroubleshootPage = () => {
       try {
         const [items, users] = await Promise.all([tasksApi.list(), tasksApi.users()]);
         setTasks(items);
-        setUserEmailById(Object.fromEntries(users.map((user) => [user.id, user.email])));
+        setUserNameById(Object.fromEntries(users.map((user) => [user.id, user.name])));
         const presetTaskId = searchParams.get('taskId');
         if (presetTaskId) {
           const parsed = Number(presetTaskId);
@@ -148,7 +148,7 @@ export const ClientTroubleshootPage = () => {
         ) : (
           <LogsTable
             logs={logs}
-            userEmailById={userEmailById}
+            userNameById={userNameById}
             taskNameById={Object.fromEntries(tasks.map((task) => [task.id, task.name]))}
             taskTypeByTaskId={Object.fromEntries(tasks.map((task) => [task.id, task.type]))}
           />

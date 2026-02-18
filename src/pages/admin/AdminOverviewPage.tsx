@@ -1,5 +1,4 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -58,14 +57,9 @@ export const AdminOverviewPage = () => {
   }, []);
 
   const metrics = useMemo(() => {
-    const pausedTasks = tasks.filter((task) => {
-      const nonDeletedSchedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
-      return nonDeletedSchedules.length > 0 && nonDeletedSchedules.every((schedule) => schedule.status === 'PAUSED');
-    }).length;
     return {
       tasks: tasks.length,
       activeTasks: tasks.filter((task) => task.status === 'ACTIVE').length,
-      pausedTasks,
       errorTasks: tasks.filter((task) => task.status === 'ERROR').length,
       notScheduledTasks: tasks.filter((task) => task.status === 'NOT_SCHEDULED').length,
     };
@@ -122,13 +116,6 @@ export const AdminOverviewPage = () => {
       subtitle: 'Running healthy',
     },
     {
-      label: 'Paused',
-      value: metrics.pausedTasks,
-      icon: <PauseCircleOutlineIcon fontSize="small" />,
-      tone: 'rgba(250, 204, 21, 0.18)',
-      subtitle: 'Paused by users/admin',
-    },
-    {
       label: 'Errors',
       value: metrics.errorTasks,
       icon: <ErrorOutlineIcon fontSize="small" />,
@@ -152,7 +139,7 @@ export const AdminOverviewPage = () => {
 
       <Grid container spacing={2} alignItems="stretch">
         {metricCards.map((metric) => (
-          <Grid key={metric.label} size={{ xs: 12, sm: 6, lg: 2.4 }}>
+          <Grid key={metric.label} size={{ xs: 12, sm: 6, lg: 3 }}>
             <Card sx={{ height: '100%' }}>
               <CardContent sx={{ p: 2.2 }}>
                 <Stack spacing={1.25}>

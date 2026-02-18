@@ -80,6 +80,8 @@ export const ClientTaskDetailsPage = () => {
   const [savingScheduleEdit, setSavingScheduleEdit] = useState(false);
   const [deletingSchedule, setDeletingSchedule] = useState(false);
   const [togglingScheduleId, setTogglingScheduleId] = useState<number | null>(null);
+  const [confirmDeleteTaskOpen, setConfirmDeleteTaskOpen] = useState(false);
+  const [deletingTask, setDeletingTask] = useState(false);
 
   const load = async () => {
     if (!taskId || Number.isNaN(taskIdNumber)) return;
@@ -209,7 +211,7 @@ export const ClientTaskDetailsPage = () => {
   };
 
   const runTaskNow = async () => {
-    if (!task || runningTask) return;
+    if (!task || runningTask || deletingTask) return;
     setRunningTask(true);
     try {
       const result = await tasksApi.run(task.id, user?.id);
@@ -223,7 +225,7 @@ export const ClientTaskDetailsPage = () => {
   };
 
   const toggleTaskPause = async () => {
-    if (!task || updatingTaskPause) return;
+    if (!task || updatingTaskPause || deletingTask) return;
     const schedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
     if (schedules.length === 0) {
       showToast('Not Scheduled', 'info');
@@ -253,6 +255,21 @@ export const ClientTaskDetailsPage = () => {
     }
   };
 
+  const deleteTask = async () => {
+    if (!task || deletingTask) return;
+    setDeletingTask(true);
+    try {
+      await tasksApi.remove(task.id);
+      showToast('Task deleted', 'success');
+      setConfirmDeleteTaskOpen(false);
+      navigate(backPath);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Delete failed', 'error');
+    } finally {
+      setDeletingTask(false);
+    }
+  };
+
   if (loading) {
     return (
       <Stack spacing={2}>
@@ -274,7 +291,7 @@ export const ClientTaskDetailsPage = () => {
         actions={
           <Stack direction="row" spacing={1}>
             {canEdit ? (
-              <Button variant="contained" startIcon={<BoltIcon />} disabled={runningTask} onClick={() => void runTaskNow()}>
+              <Button variant="contained" startIcon={<BoltIcon />} disabled={runningTask || deletingTask} onClick={() => void runTaskNow()}>
                 {runningTask ? 'Running...' : 'Run Now'}
               </Button>
             ) : null}
@@ -282,15 +299,26 @@ export const ClientTaskDetailsPage = () => {
               <Button
                 variant="outlined"
                 startIcon={isTaskPaused ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
-                disabled={updatingTaskPause}
+                disabled={updatingTaskPause || deletingTask}
                 onClick={() => void toggleTaskPause()}
               >
                 {updatingTaskPause ? 'Updating...' : isTaskPaused ? 'Resume Task' : 'Pause Task'}
               </Button>
             ) : null}
             {canEdit ? (
-              <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={openTaskEdit}>
+              <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={openTaskEdit} disabled={deletingTask}>
                 Edit Task
+              </Button>
+            ) : null}
+            {canEdit ? (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteOutlineIcon />}
+                onClick={() => setConfirmDeleteTaskOpen(true)}
+                disabled={deletingTask}
+              >
+                {deletingTask ? 'Deleting...' : 'Delete Task'}
               </Button>
             ) : null}
             <Button variant="outlined" onClick={() => navigate(historyPath)}>
@@ -355,7 +383,14 @@ export const ClientTaskDetailsPage = () => {
                 startIcon={<AddCircleOutlineIcon />}
                 variant="contained"
                 onClick={() => setAddOpen(true)}
-                disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null || updatingTaskPause}
+                disabled={
+                  deletingTask ||
+                  addingSchedule ||
+                  savingScheduleEdit ||
+                  deletingSchedule ||
+                  togglingScheduleId !== null ||
+                  updatingTaskPause
+                }
               >
                 Add Schedule
               </Button>
@@ -391,7 +426,7 @@ export const ClientTaskDetailsPage = () => {
                         <>
                           <IconButton
                             onClick={() => openScheduleEdit(schedule)}
-                            disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                            disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
                           >
                             <EditOutlinedIcon />
                           </IconButton>
@@ -401,6 +436,7 @@ export const ClientTaskDetailsPage = () => {
                               addingSchedule ||
                               savingScheduleEdit ||
                               deletingSchedule ||
+                              deletingTask ||
                               updatingTaskPause ||
                               togglingScheduleId !== null
                             }
@@ -410,7 +446,7 @@ export const ClientTaskDetailsPage = () => {
                           <IconButton
                             color="error"
                             onClick={() => setScheduleToDelete(schedule)}
-                            disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                            disabled={deletingTask || addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
                           >
                             <DeleteOutlineIcon />
                           </IconButton>
@@ -427,6 +463,22 @@ export const ClientTaskDetailsPage = () => {
 
       {canEdit ? (
         <>
+          <ConfirmDialog
+            open={confirmDeleteTaskOpen}
+            title="Delete Task"
+            description="Deleting a task also removes all schedules under it. This action cannot be undone."
+            confirmText="Delete"
+            confirmColor="error"
+            confirmDisabled={deletingTask}
+            confirmLoading={deletingTask}
+            confirmLoadingText="Deleting..."
+            disableClose={deletingTask}
+            onClose={() => {
+              if (deletingTask) return;
+              setConfirmDeleteTaskOpen(false);
+            }}
+            onConfirm={() => void deleteTask()}
+          />
           <ConfirmDialog
             open={Boolean(scheduleToDelete)}
             title="Delete Schedule"

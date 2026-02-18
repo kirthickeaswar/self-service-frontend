@@ -14,6 +14,7 @@ import {
   UpdateTaskInput,
 } from '@/types/domain';
 import { httpClient, isApiError } from '@/features/api/httpClient';
+import { validateCronExpression } from '@/features/tasks/utils/schedule';
 
 type BackendTaskStatus = 'Active' | 'Not Scheduled' | 'Deleted' | 'Error';
 type BackendScheduleStatus = 'Active' | 'Paused' | 'Deleted';
@@ -252,6 +253,12 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
     const { hours, minutes } = parseTime(payload.time);
     const windowStart = combineKolkataDateTimeToIso(dateOnly, payload.time);
     const startDate = new Date(windowStart);
+    if (Number.isNaN(startDate.getTime())) {
+      throw new Error('Invalid non-recurring date/time');
+    }
+    if (startDate.getTime() <= Date.now()) {
+      throw new Error('Non-recurring schedule time cannot be in the past.');
+    }
     const windowEndDate = new Date(startDate);
     windowEndDate.setMinutes(windowEndDate.getMinutes() + 1);
     const [, monthRaw, dayRaw] = dateOnly.split('-');
@@ -270,10 +277,15 @@ const toBackendSchedulePayload = (payload: CreateScheduleInput | UpdateScheduleI
     throw new Error('Cron expression is required');
   }
 
+  const normalizedCronExpression = normalizeCronExpression(payload.cronExpression);
+  if (validateCronExpression(normalizedCronExpression)) {
+    throw new Error('Invalid cron expression');
+  }
+
   return {
     windowStart: toKolkataIsoFromInstant(new Date()),
     windowEnd: null,
-    cronExpression: normalizeCronExpression(payload.cronExpression),
+    cronExpression: normalizedCronExpression,
   };
 };
 

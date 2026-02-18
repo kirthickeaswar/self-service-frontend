@@ -59,6 +59,7 @@ export const ChangePasswordPage = () => {
     Object.values(checks).every(Boolean) &&
     newPassword === confirmNewPassword &&
     currentPassword !== newPassword;
+  const passwordsMismatch = Boolean(confirmNewPassword) && newPassword !== confirmNewPassword;
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -70,8 +71,13 @@ export const ChangePasswordPage = () => {
     event.preventDefault();
     setError(null);
 
+    if (newPassword !== confirmNewPassword) {
+      setError('Passwords not matching.');
+      return;
+    }
+
     if (!canSubmit) {
-      setError('Please complete all requirements and ensure new passwords match.');
+      setError('Please complete all requirements.');
       return;
     }
 
@@ -157,6 +163,8 @@ export const ChangePasswordPage = () => {
               value={confirmNewPassword}
               onChange={(event) => setConfirmNewPassword(event.target.value)}
               required
+              error={passwordsMismatch}
+              helperText={passwordsMismatch ? 'Passwords not matching.' : ' '}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

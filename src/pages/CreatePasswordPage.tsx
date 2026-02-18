@@ -53,6 +53,7 @@ export const CreatePasswordPage = () => {
   );
 
   const canSubmit = Object.values(checks).every(Boolean) && password === confirmPassword && Boolean(email.trim());
+  const passwordsMismatch = Boolean(confirmPassword) && password !== confirmPassword;
 
   if (user) {
     return <Navigate to={user.role === 'ADMIN' ? '/admin/overview' : '/app/dashboard'} replace />;
@@ -61,8 +62,12 @@ export const CreatePasswordPage = () => {
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    if (password !== confirmPassword) {
+      setError('Passwords not matching.');
+      return;
+    }
     if (!canSubmit) {
-      setError('Please complete all password requirements and ensure both passwords match.');
+      setError('Please complete all password requirements.');
       return;
     }
     setSubmitting(true);
@@ -123,6 +128,8 @@ export const CreatePasswordPage = () => {
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               required
+              error={passwordsMismatch}
+              helperText={passwordsMismatch ? 'Passwords not matching.' : ' '}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">

@@ -1,10 +1,10 @@
 export type TaskType = string;
-export type TaskStatus = 'ACTIVE' | 'PAUSED' | 'ERROR' | 'NOT_SCHEDULED' | 'DELETED';
+export type TaskStatus = 'ACTIVE' | 'ERROR' | 'NOT_SCHEDULED' | 'DELETED';
 
 export type ScheduleMode = 'RECURRING' | 'NON_RECURRING' | 'CRON';
 export type RecurringFrequency = 'MINUTELY' | 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
-export type ScheduleStatus = 'SCHEDULED' | 'PAUSED' | 'COMPLETED' | 'FAILED' | 'DELETED';
+export type ScheduleStatus = 'ACTIVE' | 'PAUSED' | 'DELETED';
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export type LogSource = 'BATCH' | 'SYSTEM';
 

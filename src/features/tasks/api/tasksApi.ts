@@ -96,7 +96,7 @@ const fromTaskStatus = (status: TaskStatus): BackendTaskStatus => {
 };
 
 const toScheduleStatus = (status: BackendScheduleStatus): ScheduleStatus => {
-  if (status === 'Active') return 'SCHEDULED';
+  if (status === 'Active') return 'ACTIVE';
   if (status === 'Paused') return 'PAUSED';
   return 'DELETED';
 };
@@ -220,6 +220,15 @@ const isNonRecurringBackendSchedule = (schedule: BackendSchedule) => {
   return looksLikeSingleRunCron(schedule.cronExpression);
 };
 
+const shouldHideCompletedNonRecurringTask = (task: BackendTask, schedules: BackendSchedule[]) => {
+  if (task.status !== 'Not Scheduled') return false;
+  const activeOrPausedSchedules = schedules.filter((schedule) => schedule.status !== 'Deleted');
+  if (activeOrPausedSchedules.length > 0) return false;
+  const hadNonRecurringSchedule = schedules.some((schedule) => isNonRecurringBackendSchedule(schedule));
+  if (!hadNonRecurringSchedule) return false;
+  return Boolean(task.prevRun);
+};
+
 const toScheduleModel = (schedule: BackendSchedule): Schedule => {
   const mode = isNonRecurringBackendSchedule(schedule) ? 'NON_RECURRING' : 'CRON';
   const kolkataDateOnly = toKolkataDateOnly(schedule.windowStart);
@@ -285,8 +294,7 @@ const buildTask = (
   const derivedStatus: TaskStatus = (() => {
     if (backendStatus === 'ERROR' || backendStatus === 'DELETED') return backendStatus;
     if (mappedSchedules.length === 0) return 'NOT_SCHEDULED';
-    if (mappedSchedules.every((schedule) => schedule.status === 'PAUSED')) return 'PAUSED';
-    if (mappedSchedules.some((schedule) => schedule.status === 'SCHEDULED')) return 'ACTIVE';
+    if (mappedSchedules.some((schedule) => schedule.status === 'ACTIVE')) return 'ACTIVE';
     return backendStatus;
   })();
 
@@ -379,18 +387,22 @@ export const tasksApi = {
       backendTasks = await httpClient.get<BackendTask[]>('/tasks');
     }
 
-    const filteredBackendTasks =
-      filters?.status === 'DELETED' ? backendTasks : backendTasks.filter((task) => task.status !== 'Deleted');
+    const filteredBackendTasks = backendTasks.filter((task) => task.status !== 'Deleted');
 
     const taskDetails = await Promise.all(
       filteredBackendTasks.map(async (task) => {
         const schedules = await httpClient.get<BackendSchedule[]>(`/tasks/${task.id}/schedules`);
-        return buildTask(task, schedules, typeById, userById);
+        return {
+          task: buildTask(task, schedules, typeById, userById),
+          hideFromList: shouldHideCompletedNonRecurringTask(task, schedules),
+        };
       }),
     );
 
-    if (!filters?.createdBy) return taskDetails;
-    return taskDetails.filter((item) => item.createdBy === filters.createdBy);
+    const visibleTasks = taskDetails.filter((item) => !item.hideFromList).map((item) => item.task);
+
+    if (!filters?.createdBy) return visibleTasks;
+    return visibleTasks.filter((item) => item.createdBy === filters.createdBy);
   },
 
   getById: async (taskId: number): Promise<Task> => {

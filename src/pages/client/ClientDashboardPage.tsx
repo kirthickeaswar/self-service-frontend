@@ -5,7 +5,7 @@ import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Alert, Box, Button, Card, CardContent, Chip, LinearProgress, List, ListItem, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, LinearProgress, List, ListItem, ListItemButton, ListItemText, Skeleton, Stack, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -47,10 +47,14 @@ export const ClientDashboardPage = () => {
   }, []);
 
   const summary = useMemo(() => {
+    const pausedTasks = tasks.filter((task) => {
+      const nonDeletedSchedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
+      return nonDeletedSchedules.length > 0 && nonDeletedSchedules.every((schedule) => schedule.status === 'PAUSED');
+    }).length;
     return {
       total: tasks.length,
       active: tasks.filter((task) => task.status === 'ACTIVE').length,
-      paused: tasks.filter((task) => task.status === 'PAUSED').length,
+      paused: pausedTasks,
       error: tasks.filter((task) => task.status === 'ERROR').length,
       notScheduled: tasks.filter((task) => task.status === 'NOT_SCHEDULED').length,
     };
@@ -89,7 +93,7 @@ export const ClientDashboardPage = () => {
       .filter((task) => task.status === 'ACTIVE')
       .flatMap((task) =>
         task.schedules
-          .filter((schedule) => schedule.status === 'SCHEDULED')
+          .filter((schedule) => schedule.status === 'ACTIVE')
           .map((schedule) => ({
             taskId: task.id,
             taskName: task.name,
@@ -258,11 +262,13 @@ export const ClientDashboardPage = () => {
               ) : (
                 <List disablePadding sx={{ maxHeight: 318, overflowY: 'auto' }}>
                   {nextRuns.map((run) => (
-                    <ListItem key={run.scheduleId} divider>
-                      <ListItemText
-                        primary={`${run.taskName} (${run.scheduleId})`}
-                        secondary={`${new Date(run.runAt).toLocaleString()} | ${run.mode} at ${formatTimeDisplay(run.time)}`}
-                      />
+                    <ListItem key={run.scheduleId} divider disablePadding>
+                      <ListItemButton onClick={() => navigate(`/app/tasks/${run.taskId}`)} sx={{ py: 0.75 }}>
+                        <ListItemText
+                          primary={`${run.taskName} (${run.scheduleId})`}
+                          secondary={`${new Date(run.runAt).toLocaleString()} | ${run.mode} at ${formatTimeDisplay(run.time)}`}
+                        />
+                      </ListItemButton>
                     </ListItem>
                   ))}
                 </List>

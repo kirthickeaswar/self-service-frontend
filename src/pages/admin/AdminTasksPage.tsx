@@ -48,7 +48,7 @@ export const AdminTasksPage = () => {
     const result: Record<number, string | undefined> = {};
     taskData.forEach((task) => {
       const next = task.schedules
-        .filter((schedule) => schedule.status === 'SCHEDULED')
+        .filter((schedule) => schedule.status === 'ACTIVE')
         .sort((a, b) => +new Date(a.nextRunAt) - +new Date(b.nextRunAt))[0];
       result[task.id] = next?.nextRunAt;
     });
@@ -103,10 +103,10 @@ export const AdminTasksPage = () => {
       }
 
       const shouldResume = schedules.every((schedule) => schedule.status === 'PAUSED');
-      const targetStatus = shouldResume ? 'SCHEDULED' : 'PAUSED';
+      const targetStatus = shouldResume ? 'ACTIVE' : 'PAUSED';
       const toUpdate = shouldResume
         ? schedules.filter((schedule) => schedule.status === 'PAUSED')
-        : schedules.filter((schedule) => schedule.status === 'SCHEDULED');
+        : schedules.filter((schedule) => schedule.status === 'ACTIVE');
 
       if (toUpdate.length === 0) {
         showToast(shouldResume ? 'Nothing to resume' : 'Nothing to pause', 'info');

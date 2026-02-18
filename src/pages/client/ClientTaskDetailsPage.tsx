@@ -75,6 +75,11 @@ export const ClientTaskDetailsPage = () => {
   const [editScheduleInput, setEditScheduleInput] = useState<CreateScheduleInput>(defaultSchedule);
   const [runningTask, setRunningTask] = useState(false);
   const [updatingTaskPause, setUpdatingTaskPause] = useState(false);
+  const [savingTaskEdit, setSavingTaskEdit] = useState(false);
+  const [addingSchedule, setAddingSchedule] = useState(false);
+  const [savingScheduleEdit, setSavingScheduleEdit] = useState(false);
+  const [deletingSchedule, setDeletingSchedule] = useState(false);
+  const [togglingScheduleId, setTogglingScheduleId] = useState<number | null>(null);
 
   const load = async () => {
     if (!taskId || Number.isNaN(taskIdNumber)) return;
@@ -95,19 +100,32 @@ export const ClientTaskDetailsPage = () => {
   }, [taskId]);
 
   const toggleSchedule = async (schedule: Schedule) => {
-    if (Number.isNaN(taskIdNumber)) return;
+    if (
+      Number.isNaN(taskIdNumber) ||
+      togglingScheduleId !== null ||
+      deletingSchedule ||
+      addingSchedule ||
+      savingScheduleEdit ||
+      updatingTaskPause
+    ) {
+      return;
+    }
+    setTogglingScheduleId(schedule.id);
     try {
-      const next = schedule.status === 'PAUSED' ? 'SCHEDULED' : 'PAUSED';
+      const next = schedule.status === 'PAUSED' ? 'ACTIVE' : 'PAUSED';
       await tasksApi.updateScheduleStatus(taskIdNumber, schedule.id, next, user?.id);
       showToast(`Schedule ${next === 'PAUSED' ? 'paused' : 'resumed'}`, 'success');
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Update failed', 'error');
+    } finally {
+      setTogglingScheduleId(null);
     }
   };
 
   const deleteSchedule = async () => {
-    if (Number.isNaN(taskIdNumber) || !scheduleToDelete) return;
+    if (Number.isNaN(taskIdNumber) || !scheduleToDelete || deletingSchedule || addingSchedule || savingScheduleEdit) return;
+    setDeletingSchedule(true);
     try {
       await tasksApi.deleteSchedule(taskIdNumber, scheduleToDelete.id, user?.id);
       setScheduleToDelete(null);
@@ -115,11 +133,14 @@ export const ClientTaskDetailsPage = () => {
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Delete failed', 'error');
+    } finally {
+      setDeletingSchedule(false);
     }
   };
 
   const addSchedule = async () => {
-    if (Number.isNaN(taskIdNumber)) return;
+    if (Number.isNaN(taskIdNumber) || addingSchedule || deletingSchedule || savingScheduleEdit) return;
+    setAddingSchedule(true);
     try {
       await tasksApi.addSchedule(taskIdNumber, scheduleInput, user?.id);
       setAddOpen(false);
@@ -128,6 +149,8 @@ export const ClientTaskDetailsPage = () => {
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Create schedule failed', 'error');
+    } finally {
+      setAddingSchedule(false);
     }
   };
 
@@ -141,7 +164,8 @@ export const ClientTaskDetailsPage = () => {
   };
 
   const saveTaskEdit = async () => {
-    if (Number.isNaN(taskIdNumber)) return;
+    if (Number.isNaN(taskIdNumber) || savingTaskEdit) return;
+    setSavingTaskEdit(true);
     try {
       await tasksApi.update(taskIdNumber, {
         name: taskName.trim(),
@@ -154,6 +178,8 @@ export const ClientTaskDetailsPage = () => {
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Task update failed', 'error');
+    } finally {
+      setSavingTaskEdit(false);
     }
   };
 
@@ -168,7 +194,8 @@ export const ClientTaskDetailsPage = () => {
   };
 
   const saveScheduleEdit = async () => {
-    if (Number.isNaN(taskIdNumber) || !scheduleToEdit) return;
+    if (Number.isNaN(taskIdNumber) || !scheduleToEdit || savingScheduleEdit || addingSchedule || deletingSchedule) return;
+    setSavingScheduleEdit(true);
     try {
       await tasksApi.updateSchedule(taskIdNumber, scheduleToEdit.id, editScheduleInput, user?.id);
       setScheduleToEdit(null);
@@ -176,11 +203,13 @@ export const ClientTaskDetailsPage = () => {
       await load();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Schedule update failed', 'error');
+    } finally {
+      setSavingScheduleEdit(false);
     }
   };
 
   const runTaskNow = async () => {
-    if (!task) return;
+    if (!task || runningTask) return;
     setRunningTask(true);
     try {
       const result = await tasksApi.run(task.id, user?.id);
@@ -194,7 +223,7 @@ export const ClientTaskDetailsPage = () => {
   };
 
   const toggleTaskPause = async () => {
-    if (!task) return;
+    if (!task || updatingTaskPause) return;
     const schedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
     if (schedules.length === 0) {
       showToast('Not Scheduled', 'info');
@@ -202,10 +231,10 @@ export const ClientTaskDetailsPage = () => {
     }
 
     const shouldResume = schedules.every((schedule) => schedule.status === 'PAUSED');
-    const targetStatus = shouldResume ? 'SCHEDULED' : 'PAUSED';
+    const targetStatus = shouldResume ? 'ACTIVE' : 'PAUSED';
     const toUpdate = shouldResume
       ? schedules.filter((schedule) => schedule.status === 'PAUSED')
-      : schedules.filter((schedule) => schedule.status === 'SCHEDULED');
+      : schedules.filter((schedule) => schedule.status === 'ACTIVE');
 
     if (toUpdate.length === 0) {
       showToast(shouldResume ? 'Nothing to resume' : 'Nothing to pause', 'info');
@@ -322,7 +351,12 @@ export const ClientTaskDetailsPage = () => {
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
             <Typography variant="h6">Schedules</Typography>
             {canEdit ? (
-              <Button startIcon={<AddCircleOutlineIcon />} variant="contained" onClick={() => setAddOpen(true)}>
+              <Button
+                startIcon={<AddCircleOutlineIcon />}
+                variant="contained"
+                onClick={() => setAddOpen(true)}
+                disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null || updatingTaskPause}
+              >
                 Add Schedule
               </Button>
             ) : null}
@@ -355,13 +389,29 @@ export const ClientTaskDetailsPage = () => {
                     <TableCell>
                       {canEdit ? (
                         <>
-                          <IconButton onClick={() => openScheduleEdit(schedule)}>
+                          <IconButton
+                            onClick={() => openScheduleEdit(schedule)}
+                            disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                          >
                             <EditOutlinedIcon />
                           </IconButton>
-                          <IconButton onClick={() => void toggleSchedule(schedule)}>
+                          <IconButton
+                            onClick={() => void toggleSchedule(schedule)}
+                            disabled={
+                              addingSchedule ||
+                              savingScheduleEdit ||
+                              deletingSchedule ||
+                              updatingTaskPause ||
+                              togglingScheduleId !== null
+                            }
+                          >
                             {schedule.status === 'PAUSED' ? <PlayCircleOutlineIcon /> : <PauseCircleOutlineIcon />}
                           </IconButton>
-                          <IconButton color="error" onClick={() => setScheduleToDelete(schedule)}>
+                          <IconButton
+                            color="error"
+                            onClick={() => setScheduleToDelete(schedule)}
+                            disabled={addingSchedule || savingScheduleEdit || deletingSchedule || togglingScheduleId !== null}
+                          >
                             <DeleteOutlineIcon />
                           </IconButton>
                         </>
@@ -383,10 +433,28 @@ export const ClientTaskDetailsPage = () => {
             description="This removes only the schedule; the parent task remains."
             confirmText="Delete"
             confirmColor="error"
-            onClose={() => setScheduleToDelete(null)}
+            confirmDisabled={deletingSchedule}
+            confirmLoading={deletingSchedule}
+            confirmLoadingText="Deleting..."
+            disableClose={deletingSchedule}
+            onClose={() => {
+              if (deletingSchedule) return;
+              setScheduleToDelete(null);
+            }}
             onConfirm={() => void deleteSchedule()}
           />
-          <Dialog open={addOpen} onClose={() => setAddOpen(false)} fullWidth maxWidth="sm">
+          <Dialog
+            open={addOpen}
+            onClose={
+              addingSchedule
+                ? undefined
+                : () => {
+                    setAddOpen(false);
+                  }
+            }
+            fullWidth
+            maxWidth="sm"
+          >
             <DialogTitle>Add Schedule</DialogTitle>
             <DialogContent>
               <Stack sx={{ mt: 1 }}>
@@ -394,13 +462,15 @@ export const ClientTaskDetailsPage = () => {
               </Stack>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setAddOpen(false)}>Cancel</Button>
-              <Button variant="contained" onClick={() => void addSchedule()}>
-                Add
+              <Button onClick={() => setAddOpen(false)} disabled={addingSchedule}>
+                Cancel
+              </Button>
+              <Button variant="contained" onClick={() => void addSchedule()} disabled={addingSchedule}>
+                {addingSchedule ? 'Adding...' : 'Add'}
               </Button>
             </DialogActions>
           </Dialog>
-          <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} fullWidth maxWidth="sm">
+          <Dialog open={editTaskOpen} onClose={savingTaskEdit ? undefined : () => setEditTaskOpen(false)} fullWidth maxWidth="sm">
             <DialogTitle>Edit Task</DialogTitle>
             <DialogContent>
               <Stack spacing={2} sx={{ mt: 1 }}>
@@ -427,13 +497,20 @@ export const ClientTaskDetailsPage = () => {
               </Stack>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
-              <Button variant="contained" onClick={() => void saveTaskEdit()}>
-                Save
+              <Button onClick={() => setEditTaskOpen(false)} disabled={savingTaskEdit}>
+                Cancel
+              </Button>
+              <Button variant="contained" onClick={() => void saveTaskEdit()} disabled={savingTaskEdit}>
+                {savingTaskEdit ? 'Saving...' : 'Save'}
               </Button>
             </DialogActions>
           </Dialog>
-          <Dialog open={Boolean(scheduleToEdit)} onClose={() => setScheduleToEdit(null)} fullWidth maxWidth="sm">
+          <Dialog
+            open={Boolean(scheduleToEdit)}
+            onClose={savingScheduleEdit ? undefined : () => setScheduleToEdit(null)}
+            fullWidth
+            maxWidth="sm"
+          >
             <DialogTitle>Edit Schedule</DialogTitle>
             <DialogContent>
               <Stack sx={{ mt: 1 }}>
@@ -441,9 +518,11 @@ export const ClientTaskDetailsPage = () => {
               </Stack>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setScheduleToEdit(null)}>Cancel</Button>
-              <Button variant="contained" onClick={() => void saveScheduleEdit()}>
-                Save
+              <Button onClick={() => setScheduleToEdit(null)} disabled={savingScheduleEdit}>
+                Cancel
+              </Button>
+              <Button variant="contained" onClick={() => void saveScheduleEdit()} disabled={savingScheduleEdit}>
+                {savingScheduleEdit ? 'Saving...' : 'Save'}
               </Button>
             </DialogActions>
           </Dialog>

@@ -36,11 +36,16 @@ export const AdminTaskTypesPage = () => {
   const [editTypeName, setEditTypeName] = useState('');
   const [editBatchFilePath, setEditBatchFilePath] = useState('');
   const [editNameLocked, setEditNameLocked] = useState(false);
+  const [addingType, setAddingType] = useState(false);
+  const [savingType, setSavingType] = useState(false);
+  const [deletingType, setDeletingType] = useState(false);
+  const [checkingTypeName, setCheckingTypeName] = useState<string | null>(null);
 
   const addType = async () => {
     const type = newType.trim();
     const batchFilePath = newBatchFilePath.trim();
-    if (!type || !batchFilePath) return;
+    if (!type || !batchFilePath || addingType || savingType || deletingType || checkingTypeName !== null) return;
+    setAddingType(true);
     try {
       await tasksApi.addTaskType({ name: type, batchFilePath });
       setNewType('');
@@ -49,19 +54,25 @@ export const AdminTaskTypesPage = () => {
       showToast('Task type added', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to add task type', 'error');
+    } finally {
+      setAddingType(false);
     }
   };
 
   const openEdit = async (type: TaskTypeDefinition) => {
+    if (addingType || savingType || deletingType || checkingTypeName !== null) return;
     setEditingTypeName(type.name);
     setEditTypeName(type.name);
     setEditBatchFilePath(type.batchFilePath);
     setEditNameLocked(false);
+    setCheckingTypeName(type.name);
     try {
       const tasksUsingType = await tasksApi.list({ type: type.name });
       setEditNameLocked(tasksUsingType.length > 0);
     } catch {
       setEditNameLocked(false);
+    } finally {
+      setCheckingTypeName(null);
     }
   };
 
@@ -73,10 +84,11 @@ export const AdminTaskTypesPage = () => {
   };
 
   const saveEdit = async () => {
-    if (!editingTypeName) return;
+    if (!editingTypeName || savingType || addingType || deletingType || checkingTypeName !== null) return;
     const name = editTypeName.trim();
     const batchFilePath = editBatchFilePath.trim();
     if (!name || !batchFilePath) return;
+    setSavingType(true);
     try {
       await tasksApi.updateTaskType(editingTypeName, { name, batchFilePath });
       await reloadTaskTypes();
@@ -84,11 +96,14 @@ export const AdminTaskTypesPage = () => {
       showToast('Task type updated', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to update task type', 'error');
+    } finally {
+      setSavingType(false);
     }
   };
 
   const deleteType = async () => {
-    if (!typeToDelete) return;
+    if (!typeToDelete || deletingType || addingType || savingType || checkingTypeName !== null) return;
+    setDeletingType(true);
     try {
       await tasksApi.deleteTaskType(typeToDelete);
       setTypeToDelete(null);
@@ -96,6 +111,8 @@ export const AdminTaskTypesPage = () => {
       showToast('Task type removed', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to remove task type', 'error');
+    } finally {
+      setDeletingType(false);
     }
   };
 
@@ -126,9 +143,10 @@ export const AdminTaskTypesPage = () => {
               size="large"
               startIcon={<AddIcon />}
               onClick={() => void addType()}
+              disabled={!newType.trim() || !newBatchFilePath.trim() || addingType || savingType || deletingType || checkingTypeName !== null}
               sx={{ minWidth: 140, whiteSpace: 'nowrap' }}
             >
-              Add Type
+              {addingType ? 'Adding...' : 'Add Type'}
             </Button>
           </Stack>
         </CardContent>
@@ -146,10 +164,18 @@ export const AdminTaskTypesPage = () => {
                 divider
                 secondaryAction={
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton color="primary" onClick={() => openEdit(type)}>
+                    <IconButton
+                      color="primary"
+                      onClick={() => void openEdit(type)}
+                      disabled={addingType || savingType || deletingType || checkingTypeName !== null}
+                    >
                       <EditOutlinedIcon />
                     </IconButton>
-                    <IconButton color="error" onClick={() => setTypeToDelete(type.name)}>
+                    <IconButton
+                      color="error"
+                      onClick={() => setTypeToDelete(type.name)}
+                      disabled={addingType || savingType || deletingType || checkingTypeName !== null}
+                    >
                       <DeleteOutlineIcon />
                     </IconButton>
                   </Stack>
@@ -168,11 +194,15 @@ export const AdminTaskTypesPage = () => {
         description={`Remove ${typeToDelete ?? ''}? This will fail if any task is currently using it.`}
         confirmText="Delete"
         confirmColor="error"
-        onClose={() => setTypeToDelete(null)}
+        confirmDisabled={deletingType}
+        confirmLoading={deletingType}
+        confirmLoadingText="Deleting..."
+        disableClose={deletingType}
+        onClose={() => (deletingType ? null : setTypeToDelete(null))}
         onConfirm={() => void deleteType()}
       />
 
-      <Dialog open={Boolean(editingTypeName)} onClose={closeEdit} fullWidth maxWidth="sm">
+      <Dialog open={Boolean(editingTypeName)} onClose={savingType ? undefined : closeEdit} fullWidth maxWidth="sm">
         <DialogTitle>Edit Task Type</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -193,9 +223,11 @@ export const AdminTaskTypesPage = () => {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeEdit}>Cancel</Button>
-          <Button variant="contained" onClick={() => void saveEdit()}>
-            Save
+          <Button onClick={closeEdit} disabled={savingType}>
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={() => void saveEdit()} disabled={savingType}>
+            {savingType ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

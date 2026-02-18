@@ -6,12 +6,12 @@ const palette: Record<string, 'success' | 'warning' | 'error' | 'default' | 'inf
   ERROR: 'error',
   NOT_SCHEDULED: 'default',
   DELETED: 'default',
-  SCHEDULED: 'info',
-  COMPLETED: 'success',
-  FAILED: 'error',
 };
 
 const labelMap: Record<string, string> = {
+  ACTIVE: 'Active',
+  PAUSED: 'Paused',
+  ERROR: 'Error',
   NOT_SCHEDULED: 'Not Scheduled',
   DELETED: 'Deleted',
 };

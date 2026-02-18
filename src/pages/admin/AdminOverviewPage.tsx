@@ -58,10 +58,14 @@ export const AdminOverviewPage = () => {
   }, []);
 
   const metrics = useMemo(() => {
+    const pausedTasks = tasks.filter((task) => {
+      const nonDeletedSchedules = task.schedules.filter((schedule) => schedule.status !== 'DELETED');
+      return nonDeletedSchedules.length > 0 && nonDeletedSchedules.every((schedule) => schedule.status === 'PAUSED');
+    }).length;
     return {
       tasks: tasks.length,
       activeTasks: tasks.filter((task) => task.status === 'ACTIVE').length,
-      pausedTasks: tasks.filter((task) => task.status === 'PAUSED').length,
+      pausedTasks,
       errorTasks: tasks.filter((task) => task.status === 'ERROR').length,
       notScheduledTasks: tasks.filter((task) => task.status === 'NOT_SCHEDULED').length,
     };
@@ -100,9 +104,7 @@ export const AdminOverviewPage = () => {
     };
   }, [historyEntries, tasks]);
 
-  const attentionTasks = tasks.filter(
-    (task) => task.status === 'ERROR' || task.schedules.some((schedule) => schedule.status === 'FAILED'),
-  );
+  const attentionTasks = tasks.filter((task) => task.status === 'ERROR');
 
   const metricCards = [
     {

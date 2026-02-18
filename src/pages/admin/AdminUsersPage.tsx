@@ -51,6 +51,7 @@ export const AdminUsersPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [pendingAddUser, setPendingAddUser] = useState<PendingUserInput | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const normalizedEmail = email.trim().toLowerCase();
   const isEmailValid = emailRegex.test(normalizedEmail);
 
@@ -86,7 +87,7 @@ export const AdminUsersPage = () => {
   };
 
   const addUser = async () => {
-    if (!pendingAddUser) return;
+    if (!pendingAddUser || creatingUser) return;
     setCreatingUser(true);
     try {
       await tasksApi.createUser(pendingAddUser);
@@ -104,7 +105,8 @@ export const AdminUsersPage = () => {
   };
 
   const deleteUser = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deletingUserId !== null) return;
+    setDeletingUserId(deleteTarget.id);
     try {
       await tasksApi.deleteUser(deleteTarget.id, user?.id);
       setDeleteTarget(null);
@@ -112,6 +114,8 @@ export const AdminUsersPage = () => {
       showToast('User deleted', 'success');
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to delete user', 'error');
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -160,7 +164,7 @@ export const AdminUsersPage = () => {
                 variant="contained"
                 startIcon={<PersonAddAlt1Icon />}
                 onClick={openAddUserConfirm}
-                disabled={!name.trim() || !normalizedEmail || !isEmailValid}
+                disabled={!name.trim() || !normalizedEmail || !isEmailValid || creatingUser || deletingUserId !== null}
                 sx={{
                   height: 56,
                   mt: { xs: 0, md: '1px' },
@@ -193,7 +197,7 @@ export const AdminUsersPage = () => {
                 id: 'actions',
                 label: 'Actions',
                 render: (user: User) => (
-                  <IconButton color="error" onClick={() => setDeleteTarget(user)}>
+                  <IconButton color="error" onClick={() => setDeleteTarget(user)} disabled={deletingUserId !== null || creatingUser}>
                     <DeleteOutlineIcon />
                   </IconButton>
                 ),
@@ -209,7 +213,11 @@ export const AdminUsersPage = () => {
         description={`Delete ${deleteTarget?.email ?? ''}?`}
         confirmText="Delete"
         confirmColor="error"
-        onClose={() => setDeleteTarget(null)}
+        confirmDisabled={deletingUserId !== null}
+        confirmLoading={deletingUserId !== null}
+        confirmLoadingText="Deleting..."
+        disableClose={deletingUserId !== null}
+        onClose={() => (deletingUserId !== null ? null : setDeleteTarget(null))}
         onConfirm={() => void deleteUser()}
       />
 

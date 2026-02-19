@@ -96,6 +96,15 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
         </>
       ) : (
         <Stack spacing={1.5}>
+          <Typography variant="caption" color="text.secondary">
+            Examples: * * * * * (every minute), 0 * * * * (hourly), 0 0 * * FRI (Friday midnight).
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Format: minute hour day-of-month month day-of-week. Supports lists (,), ranges (-), steps (/), and aliases (JAN-DEC, MON-SUN).
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Ranges: minute (0-59), hour (0-23), day-of-month (1-31), month (1-12), day-of-week (0-6).
+          </Typography>
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
@@ -143,15 +152,6 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
               />
             </Grid>
           </Grid>
-          <Typography variant="caption" color="text.secondary">
-            Format: minute hour day-of-month month day-of-week. Supports lists (,), ranges (-), steps (/), and aliases (JAN-DEC, MON-SUN).
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Ranges: minute (0-59), hour (0-23), day-of-month (1-31), month (1-12), day-of-week (0-6).
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Examples: * * * * * (every minute), 0 * * * * (hourly), 0 0 * * FRI (Friday midnight).
-          </Typography>
           <Typography variant="caption" color={cronError ? 'error.main' : 'text.secondary'}>
             {cronError ? cronError : `Generated Cron: ${cronParts.join(' ')}`}
           </Typography>

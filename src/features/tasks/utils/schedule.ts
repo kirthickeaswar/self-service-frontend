@@ -508,6 +508,9 @@ const transformCronFieldTokens = (field: string, transform: (token: string) => s
     .split(',')
     .map((part) => {
       const trimmed = part.trim();
+      if (!trimmed) {
+        return '';
+      }
       const [baseRaw, stepRaw] = trimmed.split('/');
       const base = baseRaw.trim();
 
@@ -529,23 +532,46 @@ const transformCronFieldTokens = (field: string, transform: (token: string) => s
       }
       return `${baseText}/${stepRaw.trim()}`;
     })
+    .filter(Boolean)
     .join(', ');
 
 const pad2 = (value: number) => `${value}`.padStart(2, '0');
 
 const toTimeLabel = (hour: number, minute: number) => formatTimeDisplay(`${pad2(hour)}:${pad2(minute)}`);
 
-const describeMinuteHour = (minuteField: string, hourField: string) => {
+const isNumericCronToken = (value: string) => /^\d+$/.test(value.trim());
+
+const describeSeconds = (secondsField: string | undefined) => {
+  if (!secondsField) return '';
+  const seconds = secondsField.trim();
+  if (wildcardCronField(seconds) || seconds === '0') return '';
+  const everyMatch = /^\*\/(\d+)$/.exec(seconds);
+  if (everyMatch) {
+    return `every ${everyMatch[1]} seconds`;
+  }
+  return `at second(s) ${transformCronFieldTokens(seconds, (token) => token.trim())}`;
+};
+
+const describeMinuteHour = (minuteField: string, hourField: string, secondsField: string | undefined) => {
   const minute = minuteField.trim().toUpperCase();
   const hour = hourField.trim().toUpperCase();
+  const seconds = secondsField?.trim().toUpperCase() ?? '';
 
   const minuteWildcard = wildcardCronField(minute);
   const hourWildcard = wildcardCronField(hour);
 
+  if (isNumericCronToken(minute) && isNumericCronToken(hour) && (!seconds || wildcardCronField(seconds) || isNumericCronToken(seconds))) {
+    const minuteValue = Number(minute);
+    const hourValue = Number(hour);
+    if (!seconds || wildcardCronField(seconds)) {
+      return `At ${toTimeLabel(hourValue, minuteValue)}`;
+    }
+    return `At ${pad2(hourValue)}:${pad2(minuteValue)}:${pad2(Number(seconds))}`;
+  }
+
   const minuteStepMatch = /^\*\/(\d+)$/.exec(minute);
-  const hourRangeMatch = /^(\d{1,2})-(\d{1,2})$/.exec(hour);
-  const minuteSingle = /^(\d{1,2})$/.exec(minute);
-  const hourSingle = /^(\d{1,2})$/.exec(hour);
+  const minuteValues = transformCronFieldTokens(minute, (token) => token.trim());
+  const hourValues = transformCronFieldTokens(hour, (token) => token.trim());
 
   if (minuteWildcard && hourWildcard) {
     return 'Every minute';
@@ -555,42 +581,28 @@ const describeMinuteHour = (minuteField: string, hourField: string) => {
     return `Every ${minuteStepMatch[1]} minutes`;
   }
 
-  if (minuteStepMatch && hourRangeMatch) {
-    const start = Number(hourRangeMatch[1]);
-    const end = Number(hourRangeMatch[2]);
-    return `Every ${minuteStepMatch[1]} minutes between ${toTimeLabel(start, 0)} and ${toTimeLabel(end, 59)}`;
+  if (minuteStepMatch) {
+    return `Every ${minuteStepMatch[1]} minutes during hour(s) ${hourValues}`;
   }
 
-  if (minuteSingle && hourSingle) {
-    const minuteValue = Number(minuteSingle[1]);
-    const hourValue = Number(hourSingle[1]);
-    return `At ${toTimeLabel(hourValue, minuteValue)}`;
+  if (minuteWildcard) {
+    return `Every minute during hour(s) ${hourValues}`;
   }
 
-  if (minuteSingle && hourWildcard) {
-    return `At minute ${pad2(Number(minuteSingle[1]))} past every hour`;
+  if (hourWildcard) {
+    return `At minute(s) ${minuteValues} past each hour`;
   }
 
-  if (minuteSingle && hourRangeMatch) {
-    const start = Number(hourRangeMatch[1]);
-    const end = Number(hourRangeMatch[2]);
-    return `At minute ${pad2(Number(minuteSingle[1]))} between ${toTimeLabel(start, 0)} and ${toTimeLabel(end, 59)}`;
-  }
-
-  if (minuteWildcard && hourSingle) {
-    return `Every minute during ${toTimeLabel(Number(hourSingle[1]), 0)} hour`;
-  }
-
-  return `Minute ${minuteField} • Hour ${hourField}`;
+  return `At minute(s) ${minuteValues} during hour(s) ${hourValues}`;
 };
 
 const describeDayOfMonth = (dayOfMonthField: string) => {
   const dom = dayOfMonthField.trim();
   if (wildcardCronField(dom)) return '';
-  if (/^\d+$/.test(dom)) {
+  if (isNumericCronToken(dom)) {
     return `on day ${dom} of the month`;
   }
-  return `day-of-month ${dom}`;
+  return `on day-of-month ${transformCronFieldTokens(dom, (token) => token.trim())}`;
 };
 
 const describeMonth = (monthField: string) => {
@@ -605,19 +617,6 @@ const describeDayOfWeek = (dayOfWeekField: string) => {
   if (wildcardCronField(dow)) return '';
   const readable = transformCronFieldTokens(dow, toDayLabel);
   return `on ${readable}`;
-};
-
-const describeSeconds = (secondsField: string | undefined) => {
-  if (!secondsField) return '';
-  const seconds = secondsField.trim();
-  if (wildcardCronField(seconds) || seconds === '0') return '';
-  if (/^\d+$/.test(seconds)) {
-    return `at second ${seconds}`;
-  }
-  if (/^\*\/\d+$/.test(seconds)) {
-    return `every ${seconds.split('/')[1]} seconds`;
-  }
-  return `seconds ${seconds}`;
 };
 
 export const cronExpressionToNaturalLanguage = (expression: string) => {
@@ -642,15 +641,25 @@ export const cronExpressionToNaturalLanguage = (expression: string) => {
   const dayOfWeekField = dayOfWeekFieldRaw ?? '*';
   const secondsField = secondsFieldRaw ?? undefined;
 
-  const descriptions = [describeMinuteHour(minuteField, hourField)];
+  const descriptions = [describeMinuteHour(minuteField, hourField, secondsField)];
   const domText = describeDayOfMonth(dayOfMonthField);
   const monthText = describeMonth(monthField);
   const dowText = describeDayOfWeek(dayOfWeekField);
-  const secondText = describeSeconds(secondsField);
+  const shouldSkipSecondText =
+    Boolean(secondsField) &&
+    isNumericCronToken(secondsField ?? '') &&
+    isNumericCronToken(minuteField) &&
+    isNumericCronToken(hourField);
+  const secondText = shouldSkipSecondText ? '' : describeSeconds(secondsField);
 
-  if (domText) descriptions.push(domText);
+  if (domText && dowText) {
+    descriptions.push(`${domText} OR ${dowText.replace(/^on\s+/i, 'on ')}`);
+  } else if (domText) {
+    descriptions.push(domText);
+  } else if (dowText) {
+    descriptions.push(dowText);
+  }
   if (monthText) descriptions.push(monthText);
-  if (dowText) descriptions.push(dowText);
   if (secondText) descriptions.push(secondText);
 
   return descriptions.join(' • ');

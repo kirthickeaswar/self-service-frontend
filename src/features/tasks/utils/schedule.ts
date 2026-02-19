@@ -652,14 +652,25 @@ export const cronExpressionToNaturalLanguage = (expression: string) => {
     isNumericCronToken(hourField);
   const secondText = shouldSkipSecondText ? '' : describeSeconds(secondsField);
 
+  const normalizedDowText = dowText.replace(/^on\s+/i, '');
+  let dayMonthText = '';
   if (domText && dowText) {
-    descriptions.push(`${domText} OR ${dowText.replace(/^on\s+/i, 'on ')}`);
+    dayMonthText = `${domText} OR on ${normalizedDowText}`;
   } else if (domText) {
-    descriptions.push(domText);
+    dayMonthText = domText;
   } else if (dowText) {
-    descriptions.push(dowText);
+    dayMonthText = `on ${normalizedDowText}`;
   }
-  if (monthText) descriptions.push(monthText);
+
+  if (dayMonthText && monthText) {
+    dayMonthText = `${dayMonthText} ${monthText}`;
+  }
+
+  if (dayMonthText) {
+    descriptions.push(dayMonthText);
+  } else if (monthText) {
+    descriptions.push(monthText);
+  }
   if (secondText) descriptions.push(secondText);
 
   return descriptions.join(' • ');

@@ -46,6 +46,7 @@ export const TroubleshootPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [retryingTaskId, setRetryingTaskId] = useState<number | null>(null);
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
+  const canRetry = user?.role !== 'VIEWER';
 
   const load = async () => {
     setLoading(true);
@@ -88,6 +89,7 @@ export const TroubleshootPage = () => {
   }, []);
 
   const retryTask = async (task: Task) => {
+    if (!canRetry) return;
     setRetryingTaskId(task.id);
     try {
       const result = await tasksApi.run(task.id, user?.id);
@@ -190,16 +192,18 @@ export const TroubleshootPage = () => {
                             }}
                           >
                             <Stack direction="row" spacing={1} alignItems="center">
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="warning"
-                                startIcon={<ReplayIcon fontSize="small" />}
-                                disabled={retryingTaskId === task.id}
-                                onClick={() => void retryTask(task)}
-                              >
-                                {retryingTaskId === task.id ? 'Retrying...' : 'Retry'}
-                              </Button>
+                              {canRetry ? (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="warning"
+                                  startIcon={<ReplayIcon fontSize="small" />}
+                                  disabled={retryingTaskId === task.id}
+                                  onClick={() => void retryTask(task)}
+                                >
+                                  {retryingTaskId === task.id ? 'Retrying...' : 'Retry'}
+                                </Button>
+                              ) : null}
                               <Button
                                 size="small"
                                 variant="outlined"

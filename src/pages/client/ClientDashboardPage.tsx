@@ -56,20 +56,21 @@ export const ClientDashboardPage = () => {
 
   const executionSummary = useMemo(() => {
     const normalize = (status: string) => status.trim().toLowerCase();
-    const totalRuns = historyEntries.length;
-    const successRuns = historyEntries.filter((entry) => normalize(entry.status) === 'success').length;
-    const failedRuns = historyEntries.filter((entry) => normalize(entry.status) === 'failed').length;
-    const canceledRuns = historyEntries.filter((entry) => {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const recentHistory = historyEntries.filter((entry) => +new Date(entry.startedAt) >= oneDayAgo);
+    const totalRuns = recentHistory.length;
+    const successRuns = recentHistory.filter((entry) => normalize(entry.status) === 'success').length;
+    const failedRuns = recentHistory.filter((entry) => normalize(entry.status) === 'failed').length;
+    const canceledRuns = recentHistory.filter((entry) => {
       const status = normalize(entry.status);
       return status === 'canceled' || status === 'cancelled';
     }).length;
-    const runningOrQueuedRuns = historyEntries.filter((entry) => {
+    const runningOrQueuedRuns = recentHistory.filter((entry) => {
       const status = normalize(entry.status);
       return status === 'running' || status === 'queued';
     }).length;
     const completedRuns = successRuns + failedRuns + canceledRuns;
     const successRate = completedRuns > 0 ? Math.round((successRuns / completedRuns) * 100) : 0;
-    const pausedSchedules = tasks.flatMap((task) => task.schedules).filter((schedule) => schedule.status === 'PAUSED').length;
 
     return {
       totalRuns,
@@ -78,9 +79,8 @@ export const ClientDashboardPage = () => {
       completedRuns,
       successRuns,
       successRate,
-      pausedSchedules,
     };
-  }, [historyEntries, tasks]);
+  }, [historyEntries]);
 
   const nextRuns = useMemo(() => {
     return tasks
@@ -177,7 +177,7 @@ export const ClientDashboardPage = () => {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Stack spacing={1.2} sx={{ mb: 1.5 }}>
-                <Typography variant="h6">Execution Summary</Typography>
+                <Typography variant="h6">Execution Summary - Last 24 hours</Typography>
               </Stack>
               {historyLoading ? (
                 <Stack spacing={1}>
@@ -218,9 +218,9 @@ export const ClientDashboardPage = () => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Paused Schedules
+                        Completed
                       </Typography>
-                      <Typography variant="subtitle2">{executionSummary.pausedSchedules}</Typography>
+                      <Typography variant="subtitle2">{executionSummary.completedRuns}</Typography>
                     </Grid>
                   </Grid>
                 </Stack>

@@ -67,24 +67,21 @@ export const AdminOverviewPage = () => {
 
   const executionSummary = useMemo(() => {
     const normalize = (status: string) => status.trim().toLowerCase();
-    const totalRuns = historyEntries.length;
-    const successRuns = historyEntries.filter((entry) => normalize(entry.status) === 'success').length;
-    const failedRuns = historyEntries.filter((entry) => normalize(entry.status) === 'failed').length;
-    const canceledRuns = historyEntries.filter((entry) => {
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    const recentHistory = historyEntries.filter((entry) => +new Date(entry.startedAt) >= oneDayAgo);
+    const totalRuns = recentHistory.length;
+    const successRuns = recentHistory.filter((entry) => normalize(entry.status) === 'success').length;
+    const failedRuns = recentHistory.filter((entry) => normalize(entry.status) === 'failed').length;
+    const canceledRuns = recentHistory.filter((entry) => {
       const status = normalize(entry.status);
       return status === 'canceled' || status === 'cancelled';
     }).length;
-    const runningOrQueuedRuns = historyEntries.filter((entry) => {
+    const runningOrQueuedRuns = recentHistory.filter((entry) => {
       const status = normalize(entry.status);
       return status === 'running' || status === 'queued';
     }).length;
     const completedRuns = successRuns + failedRuns + canceledRuns;
     const successRate = completedRuns > 0 ? Math.round((successRuns / completedRuns) * 100) : 0;
-
-    const now = Date.now();
-    const oneDayAgo = now - 24 * 60 * 60 * 1000;
-    const runsLast24h = historyEntries.filter((entry) => +new Date(entry.startedAt) >= oneDayAgo).length;
-    const pausedSchedules = tasks.flatMap((task) => task.schedules).filter((schedule) => schedule.status === 'PAUSED').length;
 
     return {
       totalRuns,
@@ -93,10 +90,8 @@ export const AdminOverviewPage = () => {
       runningOrQueuedRuns,
       completedRuns,
       successRate,
-      runsLast24h,
-      pausedSchedules,
     };
-  }, [historyEntries, tasks]);
+  }, [historyEntries]);
 
   const attentionTasks = tasks.filter((task) => task.status === 'ERROR');
 
@@ -176,7 +171,7 @@ export const AdminOverviewPage = () => {
           <Card sx={{ height: '100%' }}>
             <CardContent>
               <Stack spacing={1.2} sx={{ mb: 1.5 }}>
-                <Typography variant="h6">Execution Summary</Typography>
+                <Typography variant="h6">Execution Summary - Last 24 hours</Typography>
               </Stack>
               {historyLoading ? (
                 <Stack spacing={1}>
@@ -217,15 +212,9 @@ export const AdminOverviewPage = () => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Paused Schedules
+                        Completed
                       </Typography>
-                      <Typography variant="subtitle2">{executionSummary.pausedSchedules}</Typography>
-                    </Grid>
-                    <Grid size={{ xs: 6, sm: 4 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Runs (24h)
-                      </Typography>
-                      <Typography variant="subtitle2">{executionSummary.runsLast24h}</Typography>
+                      <Typography variant="subtitle2">{executionSummary.completedRuns}</Typography>
                     </Grid>
                   </Grid>
                 </Stack>

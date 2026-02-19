@@ -152,11 +152,13 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
               />
             </Grid>
           </Grid>
-          <Typography variant="caption" color={cronError ? 'error.main' : 'text.secondary'}>
-            {cronError ? cronError : `Generated Cron: ${cronParts.join(' ')}`}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {cronNaturalLanguage ? `Natural Language: ${cronNaturalLanguage}` : 'Natural Language: N/A'}
+          {cronError ? (
+            <Typography variant="caption" color="error.main">
+              {cronError}
+            </Typography>
+          ) : null}
+          <Typography variant="body2" color={cronNaturalLanguage ? 'text.primary' : 'text.secondary'} fontWeight={600}>
+            {cronNaturalLanguage ? `Schedule Preview: ${cronNaturalLanguage}` : 'Schedule Preview: N/A'}
           </Typography>
           <TextField
             label="Cron Expression (manual edit)"

@@ -82,6 +82,7 @@ export const AdminOverviewPage = () => {
     }).length;
     const completedRuns = successRuns + failedRuns + canceledRuns;
     const successRate = completedRuns > 0 ? Math.round((successRuns / completedRuns) * 100) : 0;
+    const pausedSchedules = tasks.flatMap((task) => task.schedules).filter((schedule) => schedule.status === 'PAUSED').length;
 
     return {
       totalRuns,
@@ -90,8 +91,9 @@ export const AdminOverviewPage = () => {
       runningOrQueuedRuns,
       completedRuns,
       successRate,
+      pausedSchedules,
     };
-  }, [historyEntries]);
+  }, [historyEntries, tasks]);
 
   const attentionTasks = tasks.filter((task) => task.status === 'ERROR');
 
@@ -212,9 +214,9 @@ export const AdminOverviewPage = () => {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 4 }}>
                       <Typography variant="caption" color="text.secondary">
-                        Completed
+                        Paused
                       </Typography>
-                      <Typography variant="subtitle2">{executionSummary.completedRuns}</Typography>
+                      <Typography variant="subtitle2">{executionSummary.pausedSchedules}</Typography>
                     </Grid>
                   </Grid>
                 </Stack>

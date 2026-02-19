@@ -470,6 +470,192 @@ export const formatRecurringRule = (
   return parts.join(' • ');
 };
 
+const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const wildcardCronField = (field: string) => field === '*' || field === '?';
+
+const toNumber = (value: string) => {
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
+};
+
+const normalizeDayValue = (value: number) => (value === 7 ? 0 : value);
+
+const toDayLabel = (token: string) => {
+  const upper = token.trim().toUpperCase();
+  if (dayAliases[upper] !== undefined) {
+    return weekDayLabels[dayAliases[upper]];
+  }
+  const numeric = toNumber(upper);
+  if (numeric === null) return token;
+  const normalized = normalizeDayValue(numeric);
+  if (normalized < 0 || normalized > 6) return token;
+  return weekDayLabels[normalized];
+};
+
+const toMonthLabel = (token: string) => {
+  const upper = token.trim().toUpperCase();
+  if (monthAliases[upper] !== undefined) {
+    return monthLabels[monthAliases[upper] - 1];
+  }
+  const numeric = toNumber(upper);
+  if (numeric === null || numeric < 1 || numeric > 12) return token;
+  return monthLabels[numeric - 1];
+};
+
+const transformCronFieldTokens = (field: string, transform: (token: string) => string) =>
+  field
+    .split(',')
+    .map((part) => {
+      const trimmed = part.trim();
+      const [baseRaw, stepRaw] = trimmed.split('/');
+      const base = baseRaw.trim();
+
+      let baseText = base;
+      if (wildcardCronField(base)) {
+        baseText = 'every';
+      } else if (base.includes('-')) {
+        const [startRaw, endRaw] = base.split('-');
+        baseText = `${transform(startRaw)}-${transform(endRaw)}`;
+      } else {
+        baseText = transform(base);
+      }
+
+      if (!stepRaw) {
+        return baseText;
+      }
+      if (wildcardCronField(base)) {
+        return `every ${stepRaw.trim()}`;
+      }
+      return `${baseText}/${stepRaw.trim()}`;
+    })
+    .join(', ');
+
+const pad2 = (value: number) => `${value}`.padStart(2, '0');
+
+const toTimeLabel = (hour: number, minute: number) => formatTimeDisplay(`${pad2(hour)}:${pad2(minute)}`);
+
+const describeMinuteHour = (minuteField: string, hourField: string) => {
+  const minute = minuteField.trim().toUpperCase();
+  const hour = hourField.trim().toUpperCase();
+
+  const minuteWildcard = wildcardCronField(minute);
+  const hourWildcard = wildcardCronField(hour);
+
+  const minuteStepMatch = /^\*\/(\d+)$/.exec(minute);
+  const hourRangeMatch = /^(\d{1,2})-(\d{1,2})$/.exec(hour);
+  const minuteSingle = /^(\d{1,2})$/.exec(minute);
+  const hourSingle = /^(\d{1,2})$/.exec(hour);
+
+  if (minuteWildcard && hourWildcard) {
+    return 'Every minute';
+  }
+
+  if (minuteStepMatch && hourWildcard) {
+    return `Every ${minuteStepMatch[1]} minutes`;
+  }
+
+  if (minuteStepMatch && hourRangeMatch) {
+    const start = Number(hourRangeMatch[1]);
+    const end = Number(hourRangeMatch[2]);
+    return `Every ${minuteStepMatch[1]} minutes between ${toTimeLabel(start, 0)} and ${toTimeLabel(end, 59)}`;
+  }
+
+  if (minuteSingle && hourSingle) {
+    const minuteValue = Number(minuteSingle[1]);
+    const hourValue = Number(hourSingle[1]);
+    return `At ${toTimeLabel(hourValue, minuteValue)}`;
+  }
+
+  if (minuteSingle && hourWildcard) {
+    return `At minute ${pad2(Number(minuteSingle[1]))} past every hour`;
+  }
+
+  if (minuteSingle && hourRangeMatch) {
+    const start = Number(hourRangeMatch[1]);
+    const end = Number(hourRangeMatch[2]);
+    return `At minute ${pad2(Number(minuteSingle[1]))} between ${toTimeLabel(start, 0)} and ${toTimeLabel(end, 59)}`;
+  }
+
+  if (minuteWildcard && hourSingle) {
+    return `Every minute during ${toTimeLabel(Number(hourSingle[1]), 0)} hour`;
+  }
+
+  return `Minute ${minuteField} • Hour ${hourField}`;
+};
+
+const describeDayOfMonth = (dayOfMonthField: string) => {
+  const dom = dayOfMonthField.trim();
+  if (wildcardCronField(dom)) return '';
+  if (/^\d+$/.test(dom)) {
+    return `on day ${dom} of the month`;
+  }
+  return `day-of-month ${dom}`;
+};
+
+const describeMonth = (monthField: string) => {
+  const month = monthField.trim();
+  if (wildcardCronField(month)) return '';
+  const readable = transformCronFieldTokens(month, toMonthLabel);
+  return `in ${readable}`;
+};
+
+const describeDayOfWeek = (dayOfWeekField: string) => {
+  const dow = dayOfWeekField.trim();
+  if (wildcardCronField(dow)) return '';
+  const readable = transformCronFieldTokens(dow, toDayLabel);
+  return `on ${readable}`;
+};
+
+const describeSeconds = (secondsField: string | undefined) => {
+  if (!secondsField) return '';
+  const seconds = secondsField.trim();
+  if (wildcardCronField(seconds) || seconds === '0') return '';
+  if (/^\d+$/.test(seconds)) {
+    return `at second ${seconds}`;
+  }
+  if (/^\*\/\d+$/.test(seconds)) {
+    return `every ${seconds.split('/')[1]} seconds`;
+  }
+  return `seconds ${seconds}`;
+};
+
+export const cronExpressionToNaturalLanguage = (expression: string) => {
+  const validationError = validateCronExpression(expression);
+  if (validationError) {
+    return 'Invalid cron expression';
+  }
+
+  const fields = expression
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const hasSeconds = fields.length === 6;
+  const [secondsFieldRaw, minuteFieldRaw, hourFieldRaw, dayOfMonthFieldRaw, monthFieldRaw, dayOfWeekFieldRaw] = hasSeconds
+    ? fields
+    : [undefined, ...fields];
+  const minuteField = minuteFieldRaw ?? '*';
+  const hourField = hourFieldRaw ?? '*';
+  const dayOfMonthField = dayOfMonthFieldRaw ?? '*';
+  const monthField = monthFieldRaw ?? '*';
+  const dayOfWeekField = dayOfWeekFieldRaw ?? '*';
+  const secondsField = secondsFieldRaw ?? undefined;
+
+  const descriptions = [describeMinuteHour(minuteField, hourField)];
+  const domText = describeDayOfMonth(dayOfMonthField);
+  const monthText = describeMonth(monthField);
+  const dowText = describeDayOfWeek(dayOfWeekField);
+  const secondText = describeSeconds(secondsField);
+
+  if (domText) descriptions.push(domText);
+  if (monthText) descriptions.push(monthText);
+  if (dowText) descriptions.push(dowText);
+  if (secondText) descriptions.push(secondText);
+
+  return descriptions.join(' • ');
+};
+
 export const validateCronExpression = (expression: string) => {
   try {
     parseCronExpression(expression);

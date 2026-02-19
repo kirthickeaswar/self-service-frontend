@@ -1,7 +1,13 @@
 import { MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { CreateScheduleInput } from '@/types/domain';
-import { dateOnlyFromIsoOrDate, toIsoDateStart, toLocalDateInput, validateCronExpression } from '@/features/tasks/utils/schedule';
+import {
+  cronExpressionToNaturalLanguage,
+  dateOnlyFromIsoOrDate,
+  toIsoDateStart,
+  toLocalDateInput,
+  validateCronExpression,
+} from '@/features/tasks/utils/schedule';
 
 interface ScheduleFormProps {
   value: CreateScheduleInput;
@@ -33,6 +39,11 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
     nextParts[index] = nextValue.replace(/\s+/g, '');
     onChange({ ...value, cronExpression: nextParts.join(' ') });
   };
+
+  const cronNaturalLanguage =
+    value.mode === 'CRON' && value.cronExpression?.trim() && !cronError
+      ? cronExpressionToNaturalLanguage(value.cronExpression)
+      : null;
 
   return (
     <Stack spacing={2}>
@@ -143,6 +154,9 @@ export const ScheduleForm = ({ value, onChange }: ScheduleFormProps) => {
           </Typography>
           <Typography variant="caption" color={cronError ? 'error.main' : 'text.secondary'}>
             {cronError ? cronError : `Generated Cron: ${cronParts.join(' ')}`}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {cronNaturalLanguage ? `Natural Language: ${cronNaturalLanguage}` : 'Natural Language: N/A'}
           </Typography>
           <TextField
             label="Cron Expression (manual edit)"

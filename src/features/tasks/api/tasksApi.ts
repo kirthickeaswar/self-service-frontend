@@ -14,7 +14,7 @@ import {
   UpdateTaskInput,
 } from '@/types/domain';
 import { httpClient, isApiError } from '@/features/api/httpClient';
-import { validateCronExpression } from '@/features/tasks/utils/schedule';
+import { calculateNextRunAt, validateCronExpression } from '@/features/tasks/utils/schedule';
 
 type BackendTaskStatus = 'Active' | 'Not Scheduled' | 'Deleted' | 'Error';
 type BackendScheduleStatus = 'Active' | 'Paused' | 'Deleted';
@@ -232,14 +232,33 @@ const toScheduleModel = (schedule: BackendSchedule): Schedule => {
   const mode = isNonRecurringBackendSchedule(schedule) ? 'NON_RECURRING' : 'CRON';
   const status: ScheduleStatus = isCompletedNonRecurringBackendSchedule(schedule) ? 'DELETED' : toScheduleStatus(schedule.status);
   const kolkataDateOnly = toKolkataDateOnly(schedule.windowStart);
+  const normalizedCronExpression = normalizeCronExpression(schedule.cronExpression);
+  const computedNextRunAt = (() => {
+    if (mode !== 'CRON' || status === 'DELETED') return schedule.windowStart;
+    if (validateCronExpression(normalizedCronExpression)) return schedule.windowStart;
+    const startMs = +new Date(schedule.windowStart);
+    const referenceDate = Number.isNaN(startMs) ? new Date() : new Date(Math.max(Date.now(), startMs - 60_000));
+    try {
+      return calculateNextRunAt(
+        {
+          mode: 'CRON',
+          time: toKolkataTime(schedule.windowStart) || '00:00',
+          cronExpression: normalizedCronExpression,
+        },
+        referenceDate,
+      );
+    } catch {
+      return schedule.windowStart;
+    }
+  })();
   return {
     id: schedule.id,
     taskId: schedule.taskId,
     mode,
     time: toKolkataTime(schedule.windowStart),
     date: mode === 'NON_RECURRING' ? `${kolkataDateOnly}T00:00:00.000Z` : undefined,
-    cronExpression: schedule.cronExpression,
-    nextRunAt: schedule.windowStart,
+    cronExpression: normalizedCronExpression,
+    nextRunAt: computedNextRunAt,
     status,
   };
 };

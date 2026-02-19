@@ -302,9 +302,11 @@ const buildTask = (
 
   const derivedStatus: TaskStatus = (() => {
     if (backendStatus === 'ERROR' || backendStatus === 'DELETED') return backendStatus;
+    // Task is considered schedulable only when it has at least one active schedule.
+    // If all schedules are paused (or there are no schedules), surface as NOT_SCHEDULED.
     if (mappedSchedules.length === 0) return 'NOT_SCHEDULED';
     if (mappedSchedules.some((schedule) => schedule.status === 'ACTIVE')) return 'ACTIVE';
-    return backendStatus;
+    return 'NOT_SCHEDULED';
   })();
 
   return {

@@ -18,6 +18,7 @@ import { AdminCreateTaskPage } from '@/pages/admin/AdminCreateTaskPage';
 import { AdminTaskTypesPage } from '@/pages/admin/AdminTaskTypesPage';
 import { AdminAuditPage } from '@/pages/admin/AdminAuditPage';
 import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
+import { AdminExportImportPage } from '@/pages/admin/AdminExportImportPage';
 
 const RequireAuth = () => {
   const { user, loading } = useAuth();
@@ -91,6 +92,7 @@ export const router = createBrowserRouter([
               { path: 'create-task', element: <AdminCreateTaskPage /> },
               { path: 'task-types', element: <AdminTaskTypesPage /> },
               { path: 'users', element: <AdminUsersPage /> },
+              { path: 'export-import', element: <AdminExportImportPage /> },
               { path: 'audit', element: <AdminAuditPage /> },
               { path: 'troubleshoot', element: <TroubleshootPage /> },
               { path: 'logs', element: <Navigate to="/admin/audit" replace /> },
